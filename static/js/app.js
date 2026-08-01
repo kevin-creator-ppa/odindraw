@@ -1,11 +1,10 @@
 /**
  * Bootstrap da aplicação.
  *
- * Etapa 5 — objetos: as ferramentas de forma/texto/desenho livre agora
- * criam Elements reais na Scene (em vez de só mostrar preview), que o
- * Renderer desenha e a SelectTool permite selecionar/mover/editar via
- * painel de propriedades. Conectores "inteligentes" (que recalculam
- * rota ao mover objetos) ficam para a Etapa 6.
+ * Etapa 6 — conectores: as ferramentas Linha/Seta/Linha ortogonal agora
+ * "grudam" quando o início ou fim do arraste cai sobre um objeto,
+ * criando um Connector real (em vez de uma linha solta) que recalcula
+ * sua posição sozinho a cada frame, seguindo os objetos ligados.
  */
 
 import { EventBus } from "./core/EventBus.js";
@@ -35,6 +34,7 @@ import { Arrow } from "./elements/Arrow.js";
 import { OrthogonalLine } from "./elements/OrthogonalLine.js";
 import { Text } from "./elements/Text.js";
 import { Freehand } from "./elements/Freehand.js";
+import { Connector } from "./elements/Connector.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
 const ZOOM_STEP = 1.2;
@@ -190,6 +190,31 @@ function normalizeLinePoints(start, end) {
     return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
 }
 
+/**
+ * Se o arraste começou ou terminou sobre um objeto, cria um Connector
+ * (que segue os objetos ligados); senão, cria a linha/seta/ortogonal
+ * solta de sempre (Etapa 5).
+ */
+function createLineOrConnector({ start, end, startObjectId, endObjectId, routeType, startArrow = false, endArrow = false }) {
+    const points = normalizeLinePoints(start, end);
+
+    if (!startObjectId && !endObjectId) {
+        if (routeType === "orthogonal") return new OrthogonalLine(points);
+        if (endArrow || startArrow) return new Arrow(points);
+        return new Line(points);
+    }
+
+    return new Connector({
+        startObjectId,
+        endObjectId,
+        startPoint: { x: points.x1, y: points.y1 },
+        endPoint: { x: points.x2, y: points.y2 },
+        routeType,
+        startArrow,
+        endArrow,
+    });
+}
+
 /** Consome os eventos emitidos pelas ferramentas e materializa Elements reais na Scene. */
 function initElementCreation({ scene, eventBus, renderer, selectionManager, toolManager }) {
     const focusSelectTool = (element) => {
@@ -203,7 +228,7 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
         focusSelectTool(element);
     };
 
-    eventBus.on("tool:shape-drawn", ({ type, start, end }) => {
+    eventBus.on("tool:shape-drawn", ({ type, start, end, startObjectId, endObjectId }) => {
         switch (type) {
             case "rectangle":
             case "square":
@@ -214,13 +239,26 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
                 addAndSelect(new Ellipse(normalizeShapeBounds(start, end)));
                 break;
             case "line":
-                addAndSelect(new Line(normalizeLinePoints(start, end)));
+                addAndSelect(
+                    createLineOrConnector({ start, end, startObjectId, endObjectId, routeType: "straight" })
+                );
                 break;
             case "arrow":
-                addAndSelect(new Arrow(normalizeLinePoints(start, end)));
+                addAndSelect(
+                    createLineOrConnector({
+                        start,
+                        end,
+                        startObjectId,
+                        endObjectId,
+                        routeType: "straight",
+                        endArrow: true,
+                    })
+                );
                 break;
             case "orthogonal-line":
-                addAndSelect(new OrthogonalLine(normalizeLinePoints(start, end)));
+                addAndSelect(
+                    createLineOrConnector({ start, end, startObjectId, endObjectId, routeType: "orthogonal" })
+                );
                 break;
         }
     });

@@ -3,10 +3,10 @@
  * estado atual quando a seleção muda e escreve de volta a cada edição.
  * Sem seleção, os controles ficam desabilitados.
  *
- * Alinhamento de texto e camadas/grupos avançados ficam para um
- * refinamento posterior; aqui cobrimos preenchimento, borda, espessura,
- * tipo de linha, transparência, fonte, tamanho da fonte, rotação e
- * enviar para frente/trás.
+ * "Tipo de rota" só aparece para conectores; "Rotação" some para eles
+ * (a posição do conector é sempre recalculada a partir dos objetos
+ * ligados, rotação não se aplica). Alinhamento de texto e grupos ficam
+ * para um refinamento posterior.
  */
 export class PropertiesPanel {
     constructor({ selectionManager, renderer, eventBus }) {
@@ -22,6 +22,7 @@ export class PropertiesPanel {
         this.rotation = document.querySelector('[data-prop="rotation"]');
         this.fontFamily = document.querySelector('[data-prop="font-family"]');
         this.fontSize = document.querySelector('[data-prop="font-size"]');
+        this.routeType = document.querySelector('[data-prop="route-type"]');
         this.bringFrontBtn = document.querySelector('[data-action="bring-front"]');
         this.sendBackBtn = document.querySelector('[data-action="send-back"]');
 
@@ -34,9 +35,13 @@ export class PropertiesPanel {
             this.rotation,
             this.fontFamily,
             this.fontSize,
+            this.routeType,
             this.bringFrontBtn,
             this.sendBackBtn,
         ];
+
+        this._connectorOnlyRows = document.querySelectorAll("[data-connector-only]");
+        this._hiddenForConnectorRows = document.querySelectorAll("[data-hide-for-connector]");
 
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected[0] ?? null));
@@ -66,6 +71,11 @@ export class PropertiesPanel {
                 if (el.fontSize !== undefined) el.fontSize = Number(this.fontSize.value);
             })
         );
+        this.routeType.addEventListener("change", () =>
+            this._apply((el) => {
+                if (el.routeType !== undefined) el.routeType = this.routeType.value;
+            })
+        );
         this.bringFrontBtn.addEventListener("click", () => this._reorder(1));
         this.sendBackBtn.addEventListener("click", () => this._reorder(-1));
     }
@@ -79,6 +89,7 @@ export class PropertiesPanel {
     _onSelectionChange(element) {
         this._current = element;
         this._setEnabled(Boolean(element));
+        this._toggleTypeSpecificRows(element);
         if (!element) return;
 
         this.fill.value = element.style.fill;
@@ -89,6 +100,13 @@ export class PropertiesPanel {
         this.rotation.value = element.rotation;
         this.fontFamily.value = element.font ?? "Inter";
         this.fontSize.value = element.fontSize ?? 14;
+        this.routeType.value = element.routeType ?? "straight";
+    }
+
+    _toggleTypeSpecificRows(element) {
+        const isConnector = element?.type === "connector";
+        this._connectorOnlyRows.forEach((row) => (row.hidden = !isConnector));
+        this._hiddenForConnectorRows.forEach((row) => (row.hidden = isConnector));
     }
 
     _setEnabled(enabled) {

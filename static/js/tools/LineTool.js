@@ -1,7 +1,7 @@
-import { DrawShapeTool } from "./DrawShapeTool.js";
+import { ConnectableLineTool } from "./ConnectableLineTool.js";
 import { drawLinePreview } from "./shapePreview.js";
 
-export class LineTool extends DrawShapeTool {
+export class LineTool extends ConnectableLineTool {
     constructor(name = "line", shapeType = "line") {
         super(name, shapeType);
     }

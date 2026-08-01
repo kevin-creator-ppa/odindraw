@@ -29,7 +29,7 @@ export class DrawShapeTool extends Tool {
         if (!this._start) return;
         const end = this.constrainEnd(this._start, point, event);
         context.renderer.clearInteractive();
-        context.eventBus.emit("tool:shape-drawn", { type: this.shapeType, start: this._start, end });
+        context.eventBus.emit("tool:shape-drawn", this.buildPayload(context, this._start, end));
         this._start = null;
     }
 
@@ -45,4 +45,9 @@ export class DrawShapeTool extends Tool {
 
     /** Sobrescrito por cada subclasse: desenha o preview (pontos em coordenadas de mundo). */
     drawPreview(context, startWorld, endWorld) {}
+
+    /** Sobrescrito por ferramentas que anexam dados extras ao evento (ex.: ConnectableLineTool). */
+    buildPayload(context, start, end) {
+        return { type: this.shapeType, start, end };
+    }
 }

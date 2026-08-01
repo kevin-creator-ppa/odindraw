@@ -43,6 +43,9 @@ export class Element {
         this.y += dy;
     }
 
+    /** Hook opcional chamado pela Scene antes do hit-test; usado por elementos que dependem de outros (Connector). */
+    beforeHitTest(scene) {}
+
     /** Ponto de mundo está dentro do bounding box, desfazendo a rotação em torno do centro. */
     containsPoint(point) {
         const cx = this.x + this.width / 2;

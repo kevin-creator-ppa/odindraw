@@ -1,8 +1,8 @@
-import { DrawShapeTool } from "./DrawShapeTool.js";
+import { ConnectableLineTool } from "./ConnectableLineTool.js";
 import { drawOrthogonalPreview } from "./shapePreview.js";
 
 /** Linha em ângulo reto (cotovelo), como conectores ortogonais de draw.io. */
-export class OrthogonalLineTool extends DrawShapeTool {
+export class OrthogonalLineTool extends ConnectableLineTool {
     constructor() {
         super("orthogonal-line", "orthogonal-line");
     }

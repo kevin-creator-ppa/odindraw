@@ -95,7 +95,7 @@ export class Renderer {
             .sort((a, b) => a.zIndex - b.zIndex);
 
         for (const element of visible) {
-            element.render(ctx, this.camera);
+            element.render(ctx, this.camera, this.scene);
         }
     }
 
