@@ -8,7 +8,7 @@ export class Ellipse extends Element {
     drawShape(ctx, x, y, width, height) {
         ctx.beginPath();
         ctx.ellipse(x + width / 2, y + height / 2, Math.abs(width) / 2, Math.abs(height) / 2, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (this.style.fill !== "transparent") ctx.fill();
         if (this.style.strokeWidth > 0) ctx.stroke();
     }
 

@@ -6,7 +6,7 @@ function nextId(prefix) {
 }
 
 const DEFAULT_STYLE = {
-    fill: "#ffffff",
+    fill: "transparent",
     stroke: "#1e1e1e",
     strokeWidth: 2,
     strokeStyle: "solid",

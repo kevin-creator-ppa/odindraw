@@ -6,7 +6,7 @@ export class Rectangle extends Element {
     }
 
     drawShape(ctx, x, y, width, height) {
-        ctx.fillRect(x, y, width, height);
+        if (this.style.fill !== "transparent") ctx.fillRect(x, y, width, height);
         if (this.style.strokeWidth > 0) ctx.strokeRect(x, y, width, height);
     }
 

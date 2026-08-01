@@ -89,24 +89,42 @@
             <h2 class="sidebar__title">Propriedades</h2>
 
             <div class="property">
-                <label>Cor de preenchimento</label>
-                <input type="color" value="#ffffff" data-prop="fill">
+                <label>Cor da borda</label>
+                <div class="swatches" data-swatches="stroke">
+                    <button class="swatch" data-swatch-value="#1e1e1e" style="--swatch-color:#1e1e1e" title="Preto"></button>
+                    <button class="swatch" data-swatch-value="#e03131" style="--swatch-color:#e03131" title="Vermelho"></button>
+                    <button class="swatch" data-swatch-value="#2f9e44" style="--swatch-color:#2f9e44" title="Verde"></button>
+                    <button class="swatch" data-swatch-value="#1971c2" style="--swatch-color:#1971c2" title="Azul"></button>
+                    <button class="swatch" data-swatch-value="#f08c00" style="--swatch-color:#f08c00" title="Laranja"></button>
+                    <input type="color" class="swatch swatch--custom" value="#1e1e1e" data-prop="stroke" title="Cor personalizada">
+                </div>
             </div>
             <div class="property">
-                <label>Cor da borda</label>
-                <input type="color" value="#1e1e1e" data-prop="stroke">
+                <label>Cor de preenchimento</label>
+                <div class="swatches" data-swatches="fill">
+                    <button class="swatch swatch--transparent" data-swatch-value="transparent" title="Transparente"></button>
+                    <button class="swatch" data-swatch-value="#ffc9c9" style="--swatch-color:#ffc9c9" title="Rosa"></button>
+                    <button class="swatch" data-swatch-value="#b2f2bb" style="--swatch-color:#b2f2bb" title="Verde claro"></button>
+                    <button class="swatch" data-swatch-value="#a5d8ff" style="--swatch-color:#a5d8ff" title="Azul claro"></button>
+                    <button class="swatch" data-swatch-value="#ffec99" style="--swatch-color:#ffec99" title="Amarelo"></button>
+                    <input type="color" class="swatch swatch--custom" value="#ffffff" data-prop="fill" title="Cor personalizada">
+                </div>
             </div>
             <div class="property">
                 <label>Espessura</label>
-                <input type="range" min="1" max="12" value="2" data-prop="stroke-width">
+                <div class="segmented" data-prop="stroke-width">
+                    <button data-value="1" title="Fina">&#9473;</button>
+                    <button data-value="2" title="Média">&#9473;&#9473;</button>
+                    <button data-value="4" title="Grossa">&#9473;&#9473;&#9473;</button>
+                </div>
             </div>
             <div class="property">
                 <label>Tipo de linha</label>
-                <select data-prop="stroke-style">
-                    <option value="solid">Sólida</option>
-                    <option value="dashed">Tracejada</option>
-                    <option value="dotted">Pontilhada</option>
-                </select>
+                <div class="segmented" data-prop="stroke-style">
+                    <button data-value="solid" title="Sólida">&#8213;&#8213;&#8213;</button>
+                    <button data-value="dashed" title="Tracejada">&#8211;&nbsp;&#8211;&nbsp;&#8211;</button>
+                    <button data-value="dotted" title="Pontilhada">&middot;&middot;&middot;&middot;</button>
+                </div>
             </div>
             <div class="property">
                 <label>Transparência</label>
@@ -154,8 +172,17 @@
             <div class="property">
                 <label>Camada</label>
                 <div class="segmented">
-                    <button data-action="bring-front" title="Trazer para frente">&#8593;</button>
-                    <button data-action="send-back" title="Enviar para trás">&#8595;</button>
+                    <button data-action="send-back" title="Enviar para trás">&#10515;</button>
+                    <button data-action="send-backward" title="Recuar uma camada">&#8595;</button>
+                    <button data-action="bring-forward" title="Avançar uma camada">&#8593;</button>
+                    <button data-action="bring-front" title="Trazer para frente">&#10514;</button>
+                </div>
+            </div>
+            <div class="property">
+                <label>Ações</label>
+                <div class="segmented">
+                    <button data-action="duplicate-selected" title="Duplicar (Ctrl+D)">&#10697;</button>
+                    <button data-action="delete-selected" title="Excluir (Del)">&#10005;</button>
                 </div>
             </div>
         </aside>

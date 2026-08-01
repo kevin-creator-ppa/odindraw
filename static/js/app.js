@@ -14,6 +14,7 @@ import { Renderer } from "./core/Renderer.js";
 import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
+import { duplicateSelected, deleteSelected } from "./managers/objectActions.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { SaveLoad } from "./io/SaveLoad.js";
@@ -321,33 +322,24 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
     });
 }
 
-/** Atalhos globais de objeto: Delete/Backspace remove, Ctrl/Cmd+D duplica. */
-function initObjectShortcuts({ scene, selectionManager, renderer }) {
+/** Atalhos globais de objeto: Delete/Backspace remove, Ctrl/Cmd+D duplica (mesma lógica dos botões de Ação do painel). */
+function initObjectShortcuts(engine) {
     const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
     window.addEventListener("keydown", (event) => {
         if (EDITABLE_TAGS.has(event.target.tagName)) return;
 
         if (event.key === "Delete" || event.key === "Backspace") {
-            const selected = selectionManager.getSingle();
-            if (!selected) return;
+            if (!engine.selectionManager.getSingle()) return;
             event.preventDefault();
-            scene.removeObject(selected);
-            selectionManager.clear();
-            renderer.markDirty();
-            renderer.clearInteractive();
+            deleteSelected(engine);
             return;
         }
 
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
-            const selected = selectionManager.getSingle();
-            if (!selected) return;
+            if (!engine.selectionManager.getSingle()) return;
             event.preventDefault();
-            const clone = selected.clone();
-            clone.translate(20, 20);
-            scene.addObject(clone);
-            selectionManager.select(clone);
-            renderer.markDirty();
+            duplicateSelected(engine);
         }
     });
 }
