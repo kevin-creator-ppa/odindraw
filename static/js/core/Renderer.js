@@ -88,7 +88,15 @@ export class Renderer {
             this._drawGrid(ctx);
         }
 
-        // Etapa 5+: this.scene.getVisibleObjects(viewportRect).forEach(el => el.render(ctx, this.camera));
+        const viewport = this.camera.getViewportBounds(this.width, this.height);
+        const visible = this.scene
+            .getVisibleObjects(viewport)
+            .filter((el) => el.visible)
+            .sort((a, b) => a.zIndex - b.zIndex);
+
+        for (const element of visible) {
+            element.render(ctx, this.camera);
+        }
     }
 
     _drawGrid(ctx) {

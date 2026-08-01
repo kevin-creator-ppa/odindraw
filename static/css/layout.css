@@ -241,6 +241,13 @@
     border-right: none;
 }
 
+.property input:disabled,
+.property select:disabled,
+.segmented button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .segmented button:hover {
     background: var(--bg-hover);
 }

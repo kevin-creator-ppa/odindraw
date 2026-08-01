@@ -54,4 +54,16 @@ export class Camera {
         this.offsetX = 0;
         this.offsetY = 0;
     }
+
+    /** Retângulo do viewport em coordenadas de mundo — usado para culling. */
+    getViewportBounds(screenWidth, screenHeight) {
+        const topLeft = this.screenToWorld(0, 0);
+        const bottomRight = this.screenToWorld(screenWidth, screenHeight);
+        return {
+            x: topLeft.x,
+            y: topLeft.y,
+            width: bottomRight.x - topLeft.x,
+            height: bottomRight.y - topLeft.y,
+        };
+    }
 }
