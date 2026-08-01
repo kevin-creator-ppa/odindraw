@@ -256,14 +256,6 @@
     cursor: default;
 }
 
-.canvas-area.cursor-pan {
-    cursor: grab;
-}
-
-.canvas-area.is-panning {
-    cursor: grabbing;
-}
-
 .canvas-layer {
     position: absolute;
     inset: 0;

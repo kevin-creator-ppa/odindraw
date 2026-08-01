@@ -61,6 +61,14 @@ export class Renderer {
             canvas.style.height = `${height}px`;
         }
         this.markDirty();
+        this.clearInteractive();
+    }
+
+    /** Limpa o canvas interativo (usado pelas ferramentas para redesenhar o preview a cada movimento). */
+    clearInteractive() {
+        const ctx = this.interactiveCtx;
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        ctx.clearRect(0, 0, this.width, this.height);
     }
 
     _tick() {

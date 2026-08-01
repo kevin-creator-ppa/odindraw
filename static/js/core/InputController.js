@@ -2,26 +2,24 @@ const ZOOM_WHEEL_SENSITIVITY = 0.0015;
 const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 /**
- * Traduz eventos de mouse/teclado em movimentos de câmera (zoom/pan).
+ * Traduz eventos de mouse/teclado em navegação de câmera (zoom/pan) e,
+ * quando não se trata de navegação, encaminha o ponteiro (em coordenadas
+ * de mundo) para a ferramenta ativa via ToolManager.
  *
  * Regras de navegação:
  *  - Ctrl/Cmd + scroll: zoom centrado no cursor.
  *  - Scroll simples: pan (como no Excalidraw/draw.io).
- *  - Segurar espaço + arrastar, botão do meio do mouse, ou ferramenta
- *    "Mão" ativa: pan por arraste.
- *
- * A seleção de ferramenta de desenho em si (retângulo, texto, etc.) fica
- * para a Etapa 4 — aqui só existe o estado mínimo `activeTool` para
- * diferenciar "selecionar" de "navegar" (pan).
+ *  - Segurar espaço ou botão do meio do mouse: pan por arraste,
+ *    disponível independente da ferramenta selecionada.
  */
 export class InputController {
-    constructor({ element, camera, renderer, eventBus }) {
+    constructor({ element, camera, renderer, eventBus, toolManager }) {
         this.element = element;
         this.camera = camera;
         this.renderer = renderer;
         this.eventBus = eventBus;
+        this.toolManager = toolManager;
 
-        this.activeTool = "select";
         this._isPanning = false;
         this._spacePressed = false;
         this._lastX = 0;
@@ -42,9 +40,9 @@ export class InputController {
         window.addEventListener("keyup", this._onKeyUp);
     }
 
-    setActiveTool(tool) {
-        this.activeTool = tool;
-        this._updateCursor();
+    _toWorld(event) {
+        const rect = this.element.getBoundingClientRect();
+        return this.camera.screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
     }
 
     _onWheel(event) {
@@ -64,33 +62,49 @@ export class InputController {
     }
 
     _onPointerDown(event) {
-        const wantsPan = this._spacePressed || this.activeTool === "pan" || event.button === 1;
-        if (!wantsPan) return;
-
-        event.preventDefault();
-        this._isPanning = true;
-        this._lastX = event.clientX;
-        this._lastY = event.clientY;
-        this.element.classList.add("is-panning");
-        this.element.setPointerCapture?.(event.pointerId);
+        const wantsUniversalPan = this._spacePressed || event.button === 1;
+        if (wantsUniversalPan) {
+            event.preventDefault();
+            this._startPan(event);
+            return;
+        }
+        if (event.button !== 0) return;
+        this.toolManager.handlePointerDown(this._toWorld(event), event);
     }
 
     _onPointerMove(event) {
-        if (!this._isPanning) return;
-
-        const dx = event.clientX - this._lastX;
-        const dy = event.clientY - this._lastY;
-        this._lastX = event.clientX;
-        this._lastY = event.clientY;
-
-        this.camera.pan(dx, dy);
-        this.renderer.markDirty();
-        this.eventBus.emit("camera:change");
+        if (this._isPanning) {
+            const dx = event.clientX - this._lastX;
+            const dy = event.clientY - this._lastY;
+            this._lastX = event.clientX;
+            this._lastY = event.clientY;
+            this.camera.pan(dx, dy);
+            this.renderer.markDirty();
+            this.eventBus.emit("camera:change");
+            return;
+        }
+        this.toolManager.handlePointerMove(this._toWorld(event), event);
     }
 
-    _onPointerUp() {
+    _onPointerUp(event) {
+        if (this._isPanning) {
+            this._endPan();
+            return;
+        }
+        this.toolManager.handlePointerUp(this._toWorld(event), event);
+    }
+
+    _startPan(event) {
+        this._isPanning = true;
+        this._lastX = event.clientX;
+        this._lastY = event.clientY;
+        this.element.style.cursor = "grabbing";
+        this.element.setPointerCapture?.(event.pointerId);
+    }
+
+    _endPan() {
         this._isPanning = false;
-        this.element.classList.remove("is-panning");
+        this.element.style.cursor = this._spacePressed ? "grab" : this.toolManager.getActiveTool().cursor;
     }
 
     _onKeyDown(event) {
@@ -98,20 +112,17 @@ export class InputController {
         if (!this._spacePressed) {
             event.preventDefault();
             this._spacePressed = true;
-            this._updateCursor();
+            if (!this._isPanning) this.element.style.cursor = "grab";
         }
     }
 
     _onKeyUp(event) {
         if (event.code !== "Space") return;
         this._spacePressed = false;
-        this._isPanning = false;
-        this.element.classList.remove("is-panning");
-        this._updateCursor();
-    }
-
-    _updateCursor() {
-        const wantsPanCursor = this._spacePressed || this.activeTool === "pan";
-        this.element.classList.toggle("cursor-pan", wantsPanCursor);
+        if (this._isPanning) {
+            this._endPan();
+        } else {
+            this.element.style.cursor = this.toolManager.getActiveTool().cursor;
+        }
     }
 }

@@ -1,9 +1,11 @@
 /**
  * Bootstrap da aplicação.
  *
- * Etapa 3 — motor de canvas: inicializa Scene/Camera/Renderer/InputController
- * e conecta os controles de navegação da topbar (zoom, ajustar à tela, grade).
- * Ferramentas de desenho, elementos e conectores entram nas próximas etapas.
+ * Etapa 4 — sistema de ferramentas: cada ferramenta da sidebar esquerda
+ * vira uma instância de Tool, gerenciada pelo ToolManager e acionável
+ * por clique ou atalho de teclado. As ferramentas de desenho já mostram
+ * preview no canvas interativo; a criação de Elements reais na Scene
+ * fica para a Etapa 5.
  */
 
 import { EventBus } from "./core/EventBus.js";
@@ -11,6 +13,19 @@ import { Scene } from "./core/Scene.js";
 import { Camera } from "./core/Camera.js";
 import { Renderer } from "./core/Renderer.js";
 import { InputController } from "./core/InputController.js";
+import { ToolManager } from "./managers/ToolManager.js";
+import { SelectTool } from "./tools/SelectTool.js";
+import { PanTool } from "./tools/PanTool.js";
+import { RectangleTool } from "./tools/RectangleTool.js";
+import { SquareTool } from "./tools/SquareTool.js";
+import { EllipseTool } from "./tools/EllipseTool.js";
+import { CircleTool } from "./tools/CircleTool.js";
+import { LineTool } from "./tools/LineTool.js";
+import { ArrowTool } from "./tools/ArrowTool.js";
+import { OrthogonalLineTool } from "./tools/OrthogonalLineTool.js";
+import { TextTool } from "./tools/TextTool.js";
+import { FreehandTool } from "./tools/FreehandTool.js";
+import { EraserTool } from "./tools/EraserTool.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
 const ZOOM_STEP = 1.2;
@@ -54,9 +69,32 @@ function initCanvasEngine() {
     const scene = new Scene();
     const camera = new Camera();
     const renderer = new Renderer({ container: canvasArea, staticCanvas, interactiveCanvas, camera, scene });
-    const input = new InputController({ element: canvasArea, camera, renderer, eventBus });
 
-    return { canvasArea, eventBus, scene, camera, renderer, input };
+    const toolManager = new ToolManager({
+        canvasArea,
+        camera,
+        scene,
+        eventBus,
+        renderer,
+        tools: [
+            new SelectTool(),
+            new PanTool(),
+            new RectangleTool(),
+            new SquareTool(),
+            new EllipseTool(),
+            new CircleTool(),
+            new LineTool(),
+            new ArrowTool(),
+            new OrthogonalLineTool(),
+            new TextTool(),
+            new FreehandTool(),
+            new EraserTool(),
+        ],
+    });
+
+    const input = new InputController({ element: canvasArea, camera, renderer, eventBus, toolManager });
+
+    return { canvasArea, eventBus, scene, camera, renderer, toolManager, input };
 }
 
 function initZoomControls({ camera, renderer, eventBus }) {
@@ -98,15 +136,19 @@ function initGridToggle(renderer) {
     });
 }
 
-function initToolSelection(input) {
+function initToolSelection(toolManager) {
     const buttons = Array.from(document.querySelectorAll(".tool[data-tool]"));
+
+    const setActiveButton = (name) => {
+        buttons.forEach((button) => button.classList.toggle("tool--active", button.dataset.tool === name));
+    };
+
     buttons.forEach((button) => {
-        button.addEventListener("click", () => {
-            buttons.forEach((b) => b.classList.remove("tool--active"));
-            button.classList.add("tool--active");
-            input.setActiveTool(button.dataset.tool);
-        });
+        button.addEventListener("click", () => toolManager.setActiveTool(button.dataset.tool));
     });
+
+    toolManager.eventBus.on("tool:change", ({ name }) => setActiveButton(name));
+    setActiveButton(toolManager.getActiveTool().name);
 }
 
 function init() {
@@ -116,7 +158,7 @@ function init() {
     initExportMenu();
     initZoomControls(engine);
     initGridToggle(engine.renderer);
-    initToolSelection(engine.input);
+    initToolSelection(engine.toolManager);
 }
 
 document.addEventListener("DOMContentLoaded", init);
