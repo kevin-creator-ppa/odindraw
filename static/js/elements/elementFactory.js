@@ -1,5 +1,7 @@
 import { Rectangle } from "./Rectangle.js";
 import { Ellipse } from "./Ellipse.js";
+import { Diamond } from "./Diamond.js";
+import { Triangle } from "./Triangle.js";
 import { Line } from "./Line.js";
 import { Arrow } from "./Arrow.js";
 import { OrthogonalLine } from "./OrthogonalLine.js";
@@ -11,6 +13,8 @@ import { Component } from "./Component.js";
 const CONSTRUCTORS = {
     rectangle: Rectangle,
     ellipse: Ellipse,
+    diamond: Diamond,
+    triangle: Triangle,
     line: Line,
     arrow: Arrow,
     "orthogonal-line": OrthogonalLine,

@@ -702,6 +702,21 @@
     background: color-mix(in srgb, var(--bg-panel) 85%, transparent);
 }
 
+.context-menu {
+    position: fixed;
+    min-width: 200px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 4px;
+    z-index: 50;
+}
+
+.context-menu[hidden] {
+    display: none;
+}
+
 .bottom-toolbar {
     position: absolute;
     left: 50%;

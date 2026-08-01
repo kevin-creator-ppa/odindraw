@@ -34,6 +34,31 @@ export function drawEllipsePreview(ctx, rect) {
     });
 }
 
+export function drawDiamondPreview(ctx, rect) {
+    withPreviewStyle(ctx, () => {
+        const cx = rect.x + rect.width / 2;
+        const cy = rect.y + rect.height / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, rect.y);
+        ctx.lineTo(rect.x + rect.width, cy);
+        ctx.lineTo(cx, rect.y + rect.height);
+        ctx.lineTo(rect.x, cy);
+        ctx.closePath();
+        ctx.stroke();
+    });
+}
+
+export function drawTrianglePreview(ctx, rect) {
+    withPreviewStyle(ctx, () => {
+        ctx.beginPath();
+        ctx.moveTo(rect.x + rect.width / 2, rect.y);
+        ctx.lineTo(rect.x + rect.width, rect.y + rect.height);
+        ctx.lineTo(rect.x, rect.y + rect.height);
+        ctx.closePath();
+        ctx.stroke();
+    });
+}
+
 function drawArrowhead(ctx, from, to) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
     const size = 10;

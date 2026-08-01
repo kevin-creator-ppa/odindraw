@@ -9,7 +9,7 @@
 import { EventBus } from "./core/EventBus.js";
 import { Scene } from "./core/Scene.js";
 import { Camera } from "./core/Camera.js";
-import { Renderer } from "./core/Renderer.js";
+import { Renderer, BASE_GRID_SPACING } from "./core/Renderer.js";
 import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
@@ -19,6 +19,7 @@ import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { Minimap } from "./ui/Minimap.js";
+import { ContextMenu } from "./ui/ContextMenu.js";
 import { TextEditor } from "./ui/TextEditor.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
@@ -33,6 +34,8 @@ import { RectangleTool } from "./tools/RectangleTool.js";
 import { SquareTool } from "./tools/SquareTool.js";
 import { EllipseTool } from "./tools/EllipseTool.js";
 import { CircleTool } from "./tools/CircleTool.js";
+import { DiamondTool } from "./tools/DiamondTool.js";
+import { TriangleTool } from "./tools/TriangleTool.js";
 import { LineTool } from "./tools/LineTool.js";
 import { ArrowTool } from "./tools/ArrowTool.js";
 import { OrthogonalLineTool } from "./tools/OrthogonalLineTool.js";
@@ -41,6 +44,8 @@ import { FreehandTool } from "./tools/FreehandTool.js";
 import { EraserTool } from "./tools/EraserTool.js";
 import { Rectangle } from "./elements/Rectangle.js";
 import { Ellipse } from "./elements/Ellipse.js";
+import { Diamond } from "./elements/Diamond.js";
+import { Triangle } from "./elements/Triangle.js";
 import { Line } from "./elements/Line.js";
 import { Arrow } from "./elements/Arrow.js";
 import { OrthogonalLine } from "./elements/OrthogonalLine.js";
@@ -165,6 +170,8 @@ function initCanvasEngine() {
             new SquareTool(),
             new EllipseTool(),
             new CircleTool(),
+            new DiamondTool(),
+            new TriangleTool(),
             new LineTool(),
             new ArrowTool(),
             new OrthogonalLineTool(),
@@ -334,6 +341,12 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
             case "circle":
                 addAndSelect(new Ellipse(normalizeShapeBounds(start, end)));
                 break;
+            case "diamond":
+                addAndSelect(new Diamond(normalizeShapeBounds(start, end)));
+                break;
+            case "triangle":
+                addAndSelect(new Triangle(normalizeShapeBounds(start, end)));
+                break;
             case "line":
                 addAndSelect(
                     createLineOrConnector({ start, end, startObjectId, endObjectId, routeType: "straight" })
@@ -403,7 +416,12 @@ function initTextEditing({ canvasArea, camera, scene, toolManager, textEditor })
     });
 }
 
-/** Atalhos globais de objeto: Delete/Backspace remove, Ctrl/Cmd+D duplica (mesma lógica dos botões de Ação do painel). */
+/**
+ * Atalhos globais de objeto/seleção: Delete/Backspace remove, Ctrl/Cmd+D
+ * duplica (mesma lógica dos botões de Ação do painel), Ctrl/Cmd+A
+ * seleciona tudo, Escape limpa a seleção (ou volta pra ferramenta de
+ * seleção, se já não houver nada selecionado).
+ */
 function initObjectShortcuts(engine) {
     const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
@@ -421,6 +439,85 @@ function initObjectShortcuts(engine) {
             if (engine.selectionManager.getSelected().length === 0) return;
             event.preventDefault();
             duplicateSelected(engine);
+            return;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+            if (engine.scene.objects.length === 0) return;
+            event.preventDefault();
+            engine.selectionManager.selectMultiple(engine.scene.objects.slice());
+            return;
+        }
+
+        if (event.key === "Escape") {
+            if (engine.selectionManager.getSelected().length > 0) {
+                engine.selectionManager.clear();
+            } else if (engine.toolManager.getActiveTool().name !== "select") {
+                engine.toolManager.setActiveTool("select");
+            }
+        }
+    });
+}
+
+const NUDGE_STEP = 1;
+const NUDGE_KEYS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+
+/** Setas do teclado movem a seleção (1px, ou um passo de grade com Shift). Um único snapshot de histórico por sequência de teclas seguradas, não um por keydown. */
+function initNudgeShortcuts(engine) {
+    const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+    let nudged = false;
+
+    window.addEventListener("keydown", (event) => {
+        if (EDITABLE_TAGS.has(event.target.tagName)) return;
+        const delta = NUDGE_KEYS[event.key];
+        if (!delta) return;
+
+        const selected = engine.selectionManager.getSelected().filter((el) => !el.locked);
+        if (selected.length === 0) return;
+        event.preventDefault();
+
+        const step = event.shiftKey ? BASE_GRID_SPACING : NUDGE_STEP;
+        selected.forEach((el) => el.translate(delta[0] * step, delta[1] * step));
+        engine.renderer.markDirty();
+        nudged = true;
+    });
+
+    window.addEventListener("keyup", (event) => {
+        if (!NUDGE_KEYS[event.key] || !nudged) return;
+        nudged = false;
+        engine.historyManager?.pushSnapshot();
+    });
+}
+
+/** Ctrl/Cmd+C copia a seleção pra um clipboard em memória; Ctrl/Cmd+V cola clones deslocados (+20,+20), selecionando-os. */
+function initClipboardShortcuts(engine) {
+    const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+    let clipboard = [];
+
+    window.addEventListener("keydown", (event) => {
+        if (EDITABLE_TAGS.has(event.target.tagName)) return;
+        if (!(event.ctrlKey || event.metaKey)) return;
+        const key = event.key.toLowerCase();
+
+        if (key === "c") {
+            const selected = engine.selectionManager.getSelected();
+            if (selected.length === 0) return;
+            clipboard = selected.map((el) => el.clone());
+            return;
+        }
+
+        if (key === "v") {
+            if (clipboard.length === 0) return;
+            event.preventDefault();
+            clipboard = clipboard.map((el) => {
+                const copy = el.clone();
+                copy.translate(20, 20);
+                engine.scene.addObject(copy);
+                return copy;
+            });
+            engine.selectionManager.selectMultiple(clipboard);
+            engine.renderer.markDirty();
+            engine.historyManager?.pushSnapshot();
         }
     });
 }
@@ -506,6 +603,8 @@ function init() {
     initElementCreation(engine);
     initTextEditing(engine);
     initObjectShortcuts(engine);
+    initNudgeShortcuts(engine);
+    initClipboardShortcuts(engine);
     initFileShortcuts(engine);
     initHistoryControls(engine);
     initBottomToolbarActions(engine);
@@ -513,6 +612,7 @@ function init() {
     new FileMenu(engine);
     new LibraryPanel(engine);
     new Minimap(engine);
+    new ContextMenu(engine);
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;

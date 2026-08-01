@@ -3,6 +3,7 @@ const SHORTCUT_TO_TOOL = {
     h: "pan",
     r: "rectangle",
     o: "ellipse",
+    d: "diamond",
     l: "line",
     a: "arrow",
     t: "text",

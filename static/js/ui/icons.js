@@ -24,6 +24,8 @@ export const ICONS = {
     square: svg('<rect x="6" y="6" width="12" height="12" rx="1.5"/>'),
     circle: svg('<circle cx="12" cy="12" r="8"/>'),
     ellipse: svg('<ellipse cx="12" cy="12" rx="9" ry="6"/>'),
+    diamond: svg('<path d="M12 3l9 9-9 9-9-9z"/>'),
+    triangle: svg('<path d="M12 4l9 16H3z"/>'),
     line: svg('<line x1="5" y1="19" x2="19" y2="5"/>'),
     arrow: svg('<path d="M4 20L20 4M20 4h-7M20 4v7"/>'),
     "orthogonal-line": svg('<path d="M5 19h7V5h7"/>'),
