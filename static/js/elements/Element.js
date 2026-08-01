@@ -1,4 +1,5 @@
 import { animationState } from "./animationState.js";
+import { defaultInkColor } from "../ui/theme.js";
 
 let idCounter = 0;
 
@@ -7,13 +8,16 @@ function nextId(prefix) {
     return `${prefix}_${Date.now().toString(36)}${idCounter.toString(36)}`;
 }
 
-const DEFAULT_STYLE = {
-    fill: "transparent",
-    stroke: "#1e1e1e",
-    strokeWidth: 2,
-    strokeStyle: "solid",
-    opacity: 1,
-};
+/** Novo objeto a cada chamada (não uma constante congelada) — a cor padrão depende do tema no momento da criação. */
+function defaultStyle() {
+    return {
+        fill: "transparent",
+        stroke: defaultInkColor(),
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        opacity: 1,
+    };
+}
 
 /**
  * Base de todo objeto desenhável do diagrama. Concentra o contrato que o
@@ -33,7 +37,7 @@ export class Element {
         this.locked = false;
         this.visible = true;
         this.groupId = null;
-        this.style = { ...DEFAULT_STYLE, ...style };
+        this.style = { ...defaultStyle(), ...style };
     }
 
     getBounds() {

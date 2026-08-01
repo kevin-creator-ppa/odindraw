@@ -410,14 +410,14 @@ function initObjectShortcuts(engine) {
         if (EDITABLE_TAGS.has(event.target.tagName)) return;
 
         if (event.key === "Delete" || event.key === "Backspace") {
-            if (!engine.selectionManager.getSingle()) return;
+            if (engine.selectionManager.getSelected().length === 0) return;
             event.preventDefault();
             deleteSelected(engine);
             return;
         }
 
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
-            if (!engine.selectionManager.getSingle()) return;
+            if (engine.selectionManager.getSelected().length === 0) return;
             event.preventDefault();
             duplicateSelected(engine);
         }

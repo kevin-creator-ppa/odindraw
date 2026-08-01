@@ -1,4 +1,5 @@
 import { Element } from "./Element.js";
+import { defaultInkColor } from "../ui/theme.js";
 
 let measureCtx = null;
 function getMeasureCtx() {
@@ -30,7 +31,7 @@ export class Text extends Element {
         underline = false,
         style,
     } = {}) {
-        super("text", { x, y, width: 40, height: fontSize * LINE_HEIGHT_RATIO, style: { fill: "#1e1e1e", strokeWidth: 0, ...style } });
+        super("text", { x, y, width: 40, height: fontSize * LINE_HEIGHT_RATIO, style: { fill: defaultInkColor(), strokeWidth: 0, ...style } });
         this.content = content;
         this.font = font;
         this.fontSize = fontSize;

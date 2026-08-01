@@ -1,5 +1,7 @@
 import { Tool } from "./Tool.js";
 import { BASE_GRID_SPACING } from "../core/Renderer.js";
+import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
+import { computeAlignmentSnap, GUIDE_COLOR } from "./alignmentGuides.js";
 
 const OVERLAY_COLOR = "#6965db";
 const HANDLE_OFFSET = 14;
@@ -7,8 +9,6 @@ const ROTATE_HANDLE_OFFSET = 30;
 const HANDLE_RADIUS = 5;
 const HANDLE_HIT_RADIUS = 9;
 const MIN_RESIZE_SIZE = 10;
-const LINE_TYPES = new Set(["line", "arrow", "orthogonal-line", "connector"]);
-const RESIZABLE_TYPES = new Set(["rectangle", "ellipse", "component"]);
 
 /**
  * Ferramenta padrão: clique seleciona o elemento sob o cursor (o de
@@ -25,18 +25,28 @@ const RESIZABLE_TYPES = new Set(["rectangle", "ellipse", "component"]);
  *    cria um Connector saindo dali; alças quadradas nos cantos (só em
  *    retângulo/elipse/componente) — arrastar redimensiona; alça acima
  *    do topo, ligada por uma linha pontilhada — arrastar rotaciona.
+ *
+ * Seleção múltipla: shift-click alterna um objeto dentro/fora da seleção;
+ * arrastar a partir de área vazia abre uma marquee (rubber-band) que
+ * seleciona tudo cujo bbox intercepte o retângulo ao soltar. Arrastar
+ * qualquer objeto de uma seleção múltipla move o grupo inteiro mantendo
+ * as posições relativas. Durante o arraste (single ou grupo), guias de
+ * alinhamento comparam o bbox candidato contra os demais objetos e têm
+ * prioridade sobre o snap de grade quando encontram um match.
  */
 export class SelectTool extends Tool {
     constructor() {
         super("select", { cursor: "default" });
-        this._dragTarget = null;
+        this._dragTargets = null;
+        this._dragPrimary = null;
         this._dragOriginPointer = null;
-        this._dragOriginXY = null;
         this._moved = false;
         this._connectorDrag = null;
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
+        this._marquee = null;
+        this._activeGuides = null;
         this._unsubscribeCamera = null;
     }
 
@@ -48,15 +58,18 @@ export class SelectTool extends Tool {
     onDeactivate(context) {
         this._unsubscribeCamera?.();
         this._unsubscribeCamera = null;
-        this._dragTarget = null;
+        this._dragTargets = null;
+        this._dragPrimary = null;
         this._connectorDrag = null;
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
+        this._marquee = null;
+        this._activeGuides = null;
         context.renderer.clearInteractive();
     }
 
-    onPointerDown(context, point) {
+    onPointerDown(context, point, event) {
         const single = this._singleSelection(context);
         if (single && !single.locked) {
             const screenPoint = context.camera.worldToScreen(point.x, point.y);
@@ -94,13 +107,33 @@ export class SelectTool extends Tool {
             }
         }
 
+        const shiftKey = Boolean(event?.shiftKey);
         const target = context.scene.getObjectAtPoint(point);
-        context.selectionManager.select(target);
 
-        this._dragTarget = target && !target.locked ? target : null;
-        this._dragOriginPointer = point;
-        this._dragOriginXY = target ? { x: target.x, y: target.y } : null;
+        if (target) {
+            if (shiftKey) {
+                context.selectionManager.toggle(target);
+            } else if (!context.selectionManager.isSelected(target)) {
+                context.selectionManager.select(target);
+            }
+
+            const selected = context.selectionManager.getSelected();
+            this._dragTargets = selected
+                .filter((el) => !el.locked)
+                .map((el) => ({ element: el, originXY: { x: el.x, y: el.y } }));
+            this._dragPrimary =
+                this._dragTargets.find((entry) => entry.element === target) ?? this._dragTargets[0] ?? null;
+            this._dragOriginPointer = point;
+            this._marquee = null;
+        } else {
+            if (!shiftKey) context.selectionManager.clear();
+            this._dragTargets = null;
+            this._dragPrimary = null;
+            this._marquee = { origin: point, current: point, additive: shiftKey };
+        }
+
         this._moved = false;
+        this._activeGuides = null;
         this._redrawOverlay(context);
     }
 
@@ -136,20 +169,60 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (!this._dragTarget) return;
+        if (this._marquee) {
+            this._marquee.current = point;
+            this._redrawOverlay(context);
+            this._drawMarquee(context, this._marqueeRect());
+            return;
+        }
 
-        let targetX = this._dragOriginXY.x + (point.x - this._dragOriginPointer.x);
-        let targetY = this._dragOriginXY.y + (point.y - this._dragOriginPointer.y);
+        if (!this._dragPrimary) return;
 
-        if (context.renderer.gridEnabled) {
+        const rawTargetX = this._dragPrimary.originXY.x + (point.x - this._dragOriginPointer.x);
+        const rawTargetY = this._dragPrimary.originXY.y + (point.y - this._dragOriginPointer.y);
+
+        const primaryElement = this._dragPrimary.element;
+        const primaryBounds = primaryElement.getBounds();
+        const candidateBounds = {
+            x: primaryBounds.x + (rawTargetX - primaryElement.x),
+            y: primaryBounds.y + (rawTargetY - primaryElement.y),
+            width: primaryBounds.width,
+            height: primaryBounds.height,
+        };
+
+        const draggedSet = new Set(this._dragTargets.map((entry) => entry.element));
+        const candidates = context.scene.objects.filter((el) => el.visible !== false && !draggedSet.has(el));
+        const snap = computeAlignmentSnap({ bounds: candidateBounds, candidates, zoom: context.camera.zoom });
+
+        let targetX = rawTargetX;
+        let targetY = rawTargetY;
+
+        if (snap.dx !== 0) {
+            targetX += snap.dx;
+        } else if (context.renderer.gridEnabled) {
             targetX = Math.round(targetX / BASE_GRID_SPACING) * BASE_GRID_SPACING;
+        }
+
+        if (snap.dy !== 0) {
+            targetY += snap.dy;
+        } else if (context.renderer.gridEnabled) {
             targetY = Math.round(targetY / BASE_GRID_SPACING) * BASE_GRID_SPACING;
         }
 
-        this._dragTarget.translate(targetX - this._dragTarget.x, targetY - this._dragTarget.y);
+        const deltaX = targetX - this._dragPrimary.originXY.x;
+        const deltaY = targetY - this._dragPrimary.originXY.y;
+
+        this._dragTargets.forEach(({ element, originXY }) => {
+            const newX = originXY.x + deltaX;
+            const newY = originXY.y + deltaY;
+            element.translate(newX - element.x, newY - element.y);
+        });
+
+        this._activeGuides = snap.guides;
         this._moved = true;
         context.renderer.markDirty();
         this._redrawOverlay(context);
+        this._drawAlignmentGuides(context, this._activeGuides);
     }
 
     onPointerUp(context, point) {
@@ -204,13 +277,87 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (this._dragTarget && this._moved) {
+        if (this._marquee) {
+            const rect = this._marqueeRect();
+            const hits = context.scene.objects.filter((el) => this._intersects(rect, el.getBounds()));
+            if (hits.length > 0) {
+                if (this._marquee.additive) {
+                    context.selectionManager.addMultiple(hits);
+                } else {
+                    context.selectionManager.selectMultiple(hits);
+                }
+            }
+            this._marquee = null;
+            this._redrawOverlay(context);
+            return;
+        }
+
+        if (this._dragTargets && this._moved) {
             context.historyManager?.pushSnapshot();
         }
-        this._dragTarget = null;
+        this._dragTargets = null;
+        this._dragPrimary = null;
         this._dragOriginPointer = null;
-        this._dragOriginXY = null;
         this._moved = false;
+        this._activeGuides = null;
+        this._redrawOverlay(context);
+    }
+
+    /** Retângulo normalizado (largura/altura sempre positivas) do arraste de marquee atual. */
+    _marqueeRect() {
+        const { origin, current } = this._marquee;
+        return {
+            x: Math.min(origin.x, current.x),
+            y: Math.min(origin.y, current.y),
+            width: Math.abs(current.x - origin.x),
+            height: Math.abs(current.y - origin.y),
+        };
+    }
+
+    _intersects(a, b) {
+        return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    _drawMarquee(context, rect) {
+        const ctx = context.renderer.interactiveCtx;
+        const a = context.camera.worldToScreen(rect.x, rect.y);
+        const b = context.camera.worldToScreen(rect.x + rect.width, rect.y + rect.height);
+        ctx.save();
+        ctx.fillStyle = "rgba(105, 101, 219, 0.12)";
+        ctx.strokeStyle = OVERLAY_COLOR;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+        ctx.restore();
+    }
+
+    /** Linhas-guia rosa (distintas do roxo das alças) marcando onde o elemento arrastado alinhou com outro. */
+    _drawAlignmentGuides(context, guides) {
+        if (!guides || guides.length === 0) return;
+        const ctx = context.renderer.interactiveCtx;
+        const margin = 20 / context.camera.zoom;
+        ctx.save();
+        ctx.strokeStyle = GUIDE_COLOR;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        guides.forEach((guide) => {
+            const from = guide.from - margin;
+            const to = guide.to + margin;
+            const a =
+                guide.type === "v"
+                    ? context.camera.worldToScreen(guide.position, from)
+                    : context.camera.worldToScreen(from, guide.position);
+            const b =
+                guide.type === "v"
+                    ? context.camera.worldToScreen(guide.position, to)
+                    : context.camera.worldToScreen(to, guide.position);
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+        });
+        ctx.restore();
     }
 
     /** Redimensiona mantendo o canto oposto fixo, trabalhando no referencial local (não-rotacionado) do elemento. */

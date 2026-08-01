@@ -277,29 +277,81 @@
 .sidebar--right {
     grid-area: sidebar-right;
     border-left: 1px solid var(--border-color);
-    padding: 14px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
     min-width: 0;
     overflow-x: hidden;
     white-space: nowrap;
 }
 
 .app--properties-collapsed .sidebar--right {
-    padding: 14px 0;
     border-left: none;
     opacity: 0;
     pointer-events: none;
 }
 
-.sidebar__title {
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    flex: none;
+}
+
+.tabs__btn {
+    flex: 1;
+    padding: 11px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
     font-size: 13px;
-    font-weight: 600;
     color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
+}
+
+.tabs__btn:hover {
+    background: var(--bg-hover);
+}
+
+.tabs__btn--active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.tab-panel {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.tab-panel[hidden] {
+    display: none;
+}
+
+.tab-panel__hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.size-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.size-inputs input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+.size-inputs span {
+    color: var(--text-secondary);
+    font-size: 12px;
 }
 
 .tool-group {

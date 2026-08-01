@@ -129,121 +129,136 @@
 
         <!-- Right sidebar: properties -->
         <aside class="sidebar sidebar--right" aria-label="Propriedades" data-properties-panel>
-            <h2 class="sidebar__title">Propriedades</h2>
-
-            <div class="property">
-                <label>Cor da borda</label>
-                <div class="swatches" data-swatches="stroke">
-                    <button class="swatch" data-swatch-value="#1e1e1e" style="--swatch-color:#1e1e1e" title="Preto"></button>
-                    <button class="swatch" data-swatch-value="#e03131" style="--swatch-color:#e03131" title="Vermelho"></button>
-                    <button class="swatch" data-swatch-value="#2f9e44" style="--swatch-color:#2f9e44" title="Verde"></button>
-                    <button class="swatch" data-swatch-value="#1971c2" style="--swatch-color:#1971c2" title="Azul"></button>
-                    <button class="swatch" data-swatch-value="#f08c00" style="--swatch-color:#f08c00" title="Laranja"></button>
-                    <input type="color" class="swatch swatch--custom" value="#1e1e1e" data-prop="stroke" title="Cor personalizada">
-                </div>
-            </div>
-            <div class="property">
-                <label>Cor de preenchimento</label>
-                <div class="swatches" data-swatches="fill">
-                    <button class="swatch swatch--transparent" data-swatch-value="transparent" title="Transparente"></button>
-                    <button class="swatch" data-swatch-value="#ffc9c9" style="--swatch-color:#ffc9c9" title="Rosa"></button>
-                    <button class="swatch" data-swatch-value="#b2f2bb" style="--swatch-color:#b2f2bb" title="Verde claro"></button>
-                    <button class="swatch" data-swatch-value="#a5d8ff" style="--swatch-color:#a5d8ff" title="Azul claro"></button>
-                    <button class="swatch" data-swatch-value="#ffec99" style="--swatch-color:#ffec99" title="Amarelo"></button>
-                    <input type="color" class="swatch swatch--custom" value="#ffffff" data-prop="fill" title="Cor personalizada">
-                </div>
-            </div>
-            <div class="property">
-                <label>Espessura</label>
-                <div class="segmented" data-prop="stroke-width">
-                    <button data-value="1" title="Fina">&#9473;</button>
-                    <button data-value="2" title="Média">&#9473;&#9473;</button>
-                    <button data-value="4" title="Grossa">&#9473;&#9473;&#9473;</button>
-                </div>
-            </div>
-            <div class="property">
-                <label>Tipo de linha</label>
-                <div class="segmented" data-prop="stroke-style">
-                    <button data-value="solid" title="Sólida">&#8213;&#8213;&#8213;</button>
-                    <button data-value="dashed" title="Tracejada">&#8211;&nbsp;&#8211;&nbsp;&#8211;</button>
-                    <button data-value="dotted" title="Pontilhada">&middot;&middot;&middot;&middot;</button>
-                    <button data-value="animated" data-icon="dash-motion" title="Animada"></button>
-                </div>
-            </div>
-            <div class="property">
-                <label>Transparência</label>
-                <input type="range" min="0" max="100" value="100" data-prop="opacity">
+            <div class="tabs" data-tabs>
+                <button class="tabs__btn tabs__btn--active" data-tab="style">Estilo</button>
+                <button class="tabs__btn" data-tab="text">Texto</button>
+                <button class="tabs__btn" data-tab="arrange">Organizar</button>
             </div>
 
-            <span class="divider divider--horizontal"></span>
-
-            <div class="property" data-text-only hidden>
-                <label>Fonte</label>
-                <select data-prop="font-family">
-                    <option>Inter</option>
-                    <option>Arial</option>
-                    <option>Georgia</option>
-                    <option>Monospace</option>
-                </select>
-            </div>
-            <div class="property" data-text-only hidden>
-                <label>Tamanho da fonte</label>
-                <input type="number" min="8" max="96" value="14" data-prop="font-size">
-            </div>
-            <div class="property" data-text-only hidden>
-                <label>Estilo do texto</label>
-                <div class="segmented">
-                    <button data-prop="bold" class="text-style-btn text-style-btn--bold" title="Negrito">B</button>
-                    <button data-prop="italic" class="text-style-btn text-style-btn--italic" title="Itálico">I</button>
-                    <button data-prop="underline" class="text-style-btn text-style-btn--underline" title="Sublinhado">S</button>
+            <div class="tab-panel" data-tab-panel="style">
+                <div class="property">
+                    <label>Cor da borda</label>
+                    <div class="swatches" data-swatches="stroke">
+                        <button class="swatch" data-swatch-value="#1e1e1e" style="--swatch-color:#1e1e1e" title="Preto"></button>
+                        <button class="swatch" data-swatch-value="#e03131" style="--swatch-color:#e03131" title="Vermelho"></button>
+                        <button class="swatch" data-swatch-value="#2f9e44" style="--swatch-color:#2f9e44" title="Verde"></button>
+                        <button class="swatch" data-swatch-value="#1971c2" style="--swatch-color:#1971c2" title="Azul"></button>
+                        <button class="swatch" data-swatch-value="#f08c00" style="--swatch-color:#f08c00" title="Laranja"></button>
+                        <input type="color" class="swatch swatch--custom" value="#1e1e1e" data-prop="stroke" title="Cor personalizada">
+                    </div>
                 </div>
-            </div>
-            <div class="property" data-text-only hidden>
-                <label>Alinhamento</label>
-                <div class="segmented">
-                    <button data-prop="align" data-value="left" title="Esquerda">&#8676;</button>
-                    <button data-prop="align" data-value="center" title="Centro">&#8596;</button>
-                    <button data-prop="align" data-value="right" title="Direita">&#8677;</button>
+                <div class="property">
+                    <label>Cor de preenchimento</label>
+                    <div class="swatches" data-swatches="fill">
+                        <button class="swatch swatch--transparent" data-swatch-value="transparent" title="Transparente"></button>
+                        <button class="swatch" data-swatch-value="#ffc9c9" style="--swatch-color:#ffc9c9" title="Rosa"></button>
+                        <button class="swatch" data-swatch-value="#b2f2bb" style="--swatch-color:#b2f2bb" title="Verde claro"></button>
+                        <button class="swatch" data-swatch-value="#a5d8ff" style="--swatch-color:#a5d8ff" title="Azul claro"></button>
+                        <button class="swatch" data-swatch-value="#ffec99" style="--swatch-color:#ffec99" title="Amarelo"></button>
+                        <input type="color" class="swatch swatch--custom" value="#ffffff" data-prop="fill" title="Cor personalizada">
+                    </div>
                 </div>
-            </div>
-            <div class="property" data-hide-for-line>
-                <label>Rotação</label>
-                <input type="number" min="-180" max="180" value="0" data-prop="rotation">
-            </div>
-            <div class="property" data-line-only hidden>
-                <label>Tipo de rota</label>
-                <select data-prop="route-type">
-                    <option value="straight">Reta</option>
-                    <option value="orthogonal">Ortogonal</option>
-                    <option value="curved">Curva</option>
-                </select>
-            </div>
-            <div class="property" data-line-only hidden>
-                <label>Setas</label>
-                <div class="segmented">
-                    <button data-prop="start-arrow" data-icon="arrow-start" title="Seta no início"></button>
-                    <button data-prop="end-arrow" data-icon="arrow-end" title="Seta no fim"></button>
+                <div class="property">
+                    <label>Espessura</label>
+                    <div class="segmented" data-prop="stroke-width">
+                        <button data-value="1" title="Fina">&#9473;</button>
+                        <button data-value="2" title="Média">&#9473;&#9473;</button>
+                        <button data-value="4" title="Grossa">&#9473;&#9473;&#9473;</button>
+                    </div>
+                </div>
+                <div class="property">
+                    <label>Tipo de linha</label>
+                    <div class="segmented" data-prop="stroke-style">
+                        <button data-value="solid" title="Sólida">&#8213;&#8213;&#8213;</button>
+                        <button data-value="dashed" title="Tracejada">&#8211;&nbsp;&#8211;&nbsp;&#8211;</button>
+                        <button data-value="dotted" title="Pontilhada">&middot;&middot;&middot;&middot;</button>
+                        <button data-value="animated" data-icon="dash-motion" title="Animada"></button>
+                    </div>
+                </div>
+                <div class="property">
+                    <label>Transparência</label>
+                    <input type="range" min="0" max="100" value="100" data-prop="opacity">
+                </div>
+                <div class="property" data-line-only hidden>
+                    <label>Tipo de rota</label>
+                    <select data-prop="route-type">
+                        <option value="straight">Reta</option>
+                        <option value="orthogonal">Ortogonal</option>
+                        <option value="curved">Curva</option>
+                    </select>
+                </div>
+                <div class="property" data-line-only hidden>
+                    <label>Setas</label>
+                    <div class="segmented">
+                        <button data-prop="start-arrow" data-icon="arrow-start" title="Seta no início"></button>
+                        <button data-prop="end-arrow" data-icon="arrow-end" title="Seta no fim"></button>
+                    </div>
                 </div>
             </div>
 
-            <span class="divider divider--horizontal"></span>
-
-            <div class="property">
-                <label>Camada</label>
-                <div class="segmented">
-                    <button data-action="send-back" data-icon="layer-back" title="Enviar para trás"></button>
-                    <button data-action="send-backward" data-icon="layer-backward" title="Recuar uma camada"></button>
-                    <button data-action="bring-forward" data-icon="layer-forward" title="Avançar uma camada"></button>
-                    <button data-action="bring-front" data-icon="layer-front" title="Trazer para frente"></button>
+            <div class="tab-panel" data-tab-panel="text" hidden>
+                <div class="property" data-text-only hidden>
+                    <label>Fonte</label>
+                    <select data-prop="font-family">
+                        <option>Inter</option>
+                        <option>Arial</option>
+                        <option>Georgia</option>
+                        <option>Monospace</option>
+                    </select>
                 </div>
+                <div class="property" data-text-only hidden>
+                    <label>Tamanho da fonte</label>
+                    <input type="number" min="8" max="96" value="14" data-prop="font-size">
+                </div>
+                <div class="property" data-text-only hidden>
+                    <label>Estilo do texto</label>
+                    <div class="segmented">
+                        <button data-prop="bold" class="text-style-btn text-style-btn--bold" title="Negrito">B</button>
+                        <button data-prop="italic" class="text-style-btn text-style-btn--italic" title="Itálico">I</button>
+                        <button data-prop="underline" class="text-style-btn text-style-btn--underline" title="Sublinhado">S</button>
+                    </div>
+                </div>
+                <div class="property" data-text-only hidden>
+                    <label>Alinhamento</label>
+                    <div class="segmented">
+                        <button data-prop="align" data-value="left" title="Esquerda">&#8676;</button>
+                        <button data-prop="align" data-value="center" title="Centro">&#8596;</button>
+                        <button data-prop="align" data-value="right" title="Direita">&#8677;</button>
+                    </div>
+                </div>
+                <p class="tab-panel__hint" data-text-empty-hint hidden>Selecione um texto para editar a fonte.</p>
             </div>
-            <div class="property">
-                <label>Ações</label>
-                <div class="segmented">
-                    <button data-action="duplicate-selected" data-icon="duplicate" title="Duplicar (Ctrl+D)"></button>
-                    <button data-action="delete-selected" data-icon="trash" title="Excluir (Del)"></button>
-                    <button data-action="toggle-lock" data-icon="lock" title="Bloquear/desbloquear"></button>
-                    <button data-action="toggle-visible" data-icon="eye" title="Ocultar/exibir"></button>
+
+            <div class="tab-panel" data-tab-panel="arrange">
+                <div class="property" data-resizable-only hidden>
+                    <label>Tamanho</label>
+                    <div class="size-inputs">
+                        <input type="number" min="10" data-prop="width" title="Largura" placeholder="L">
+                        <span>×</span>
+                        <input type="number" min="10" data-prop="height" title="Altura" placeholder="A">
+                    </div>
+                </div>
+                <div class="property" data-hide-for-line>
+                    <label>Rotação</label>
+                    <input type="number" min="-180" max="180" value="0" data-prop="rotation">
+                </div>
+                <div class="property">
+                    <label>Camada</label>
+                    <div class="segmented">
+                        <button data-action="send-back" data-icon="layer-back" title="Enviar para trás"></button>
+                        <button data-action="send-backward" data-icon="layer-backward" title="Recuar uma camada"></button>
+                        <button data-action="bring-forward" data-icon="layer-forward" title="Avançar uma camada"></button>
+                        <button data-action="bring-front" data-icon="layer-front" title="Trazer para frente"></button>
+                    </div>
+                </div>
+                <div class="property">
+                    <label>Ações</label>
+                    <div class="segmented">
+                        <button data-action="duplicate-selected" data-icon="duplicate" title="Duplicar (Ctrl+D)"></button>
+                        <button data-action="delete-selected" data-icon="trash" title="Excluir (Del)"></button>
+                        <button data-action="toggle-lock" data-icon="lock" title="Bloquear/desbloquear"></button>
+                        <button data-action="toggle-visible" data-icon="eye" title="Ocultar/exibir"></button>
+                    </div>
                 </div>
             </div>
         </aside>

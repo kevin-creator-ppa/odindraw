@@ -17,6 +17,7 @@ data/diagrams/*.json
 # Editor / SO
 .vscode/
 .idea/
+.claude/
 .DS_Store
 Thumbs.db
 

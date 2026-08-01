@@ -1,20 +1,20 @@
 import { duplicateSelected, deleteSelected } from "../managers/objectActions.js";
+import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 
 /**
- * Liga os controles da sidebar direita ao elemento selecionado: lê o
- * estado atual quando a seleção muda e escreve de volta a cada edição.
- * Sem seleção, os controles ficam desabilitados.
+ * Liga os controles da sidebar direita à seleção atual: lê o estado do
+ * primeiro elemento selecionado quando a seleção muda e escreve de
+ * volta em TODOS os selecionados a cada edição (edição em lote). Sem
+ * seleção, os controles ficam desabilitados.
+ *
+ * Painel organizado em 3 abas, como o draw.io: Estilo (cor/traço/setas/
+ * rota), Texto (fonte/estilo/alinhamento — só relevante pra type
+ * "text") e Organizar (tamanho/rotação/camada/ações).
  *
  * Edições "ao vivo" (arrastar um slider) atualizam o desenho a cada
  * evento `input`, mas só entram no histórico de desfazer quando o
  * usuário termina o gesto (`change`) — senão cada pixel de um arraste
  * de opacidade viraria um passo de undo.
- *
- * "Tipo de rota" e "Setas" aparecem para qualquer elemento tipo linha
- * (linha/seta/ortogonal/conector); "Rotação" some para eles (não se
- * aplica — a forma é definida pelos dois pontos, não por um bbox
- * rotacionado). Fonte/tamanho/estilo/alinhamento só aparecem para
- * elementos de texto.
  */
 export class PropertiesPanel {
     constructor({ scene, selectionManager, renderer, eventBus, historyManager }) {
@@ -23,6 +23,7 @@ export class PropertiesPanel {
         this.renderer = renderer;
         this.historyManager = historyManager;
         this._current = null;
+        this._selection = [];
 
         this.fill = document.querySelector('[data-prop="fill"]');
         this.stroke = document.querySelector('[data-prop="stroke"]');
@@ -30,6 +31,8 @@ export class PropertiesPanel {
         this.strokeStyleGroup = document.querySelector('[data-prop="stroke-style"]');
         this.opacity = document.querySelector('[data-prop="opacity"]');
         this.rotation = document.querySelector('[data-prop="rotation"]');
+        this.width = document.querySelector('[data-prop="width"]');
+        this.height = document.querySelector('[data-prop="height"]');
         this.fontFamily = document.querySelector('[data-prop="font-family"]');
         this.fontSize = document.querySelector('[data-prop="font-size"]');
         this.boldBtn = document.querySelector('[data-prop="bold"]');
@@ -47,6 +50,8 @@ export class PropertiesPanel {
             this.stroke,
             this.opacity,
             this.rotation,
+            this.width,
+            this.height,
             this.fontFamily,
             this.fontSize,
             this.boldBtn,
@@ -68,10 +73,25 @@ export class PropertiesPanel {
         this._textOnlyRows = document.querySelectorAll("[data-text-only]");
         this._lineOnlyRows = document.querySelectorAll("[data-line-only]");
         this._hiddenForLineRows = document.querySelectorAll("[data-hide-for-line]");
+        this._resizableOnlyRows = document.querySelectorAll("[data-resizable-only]");
+        this._textEmptyHint = document.querySelector("[data-text-empty-hint]");
 
+        this._bindTabs();
         this._bind();
-        eventBus.on("selection:change", (selected) => this._onSelectionChange(selected[0] ?? null));
+        eventBus.on("selection:change", (selected) => this._onSelectionChange(selected));
         this._setEnabled(false);
+    }
+
+    _bindTabs() {
+        const buttons = document.querySelectorAll("[data-tab]");
+        buttons.forEach((button) => {
+            button.addEventListener("click", () => {
+                buttons.forEach((b) => b.classList.toggle("tabs__btn--active", b === button));
+                document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
+                    panel.hidden = panel.dataset.tabPanel !== button.dataset.tab;
+                });
+            });
+        });
     }
 
     _bind() {
@@ -91,6 +111,21 @@ export class PropertiesPanel {
         this.opacity.addEventListener("change", () => this._commit());
         this.rotation.addEventListener("input", () => this._apply((el) => (el.rotation = Number(this.rotation.value))));
         this.rotation.addEventListener("change", () => this._commit());
+
+        this.width.addEventListener("change", () => {
+            this._apply((el) => {
+                if (!RESIZABLE_TYPES.has(el.type)) return;
+                el.width = Math.max(10, Number(this.width.value) || el.width);
+            });
+            this._commit();
+        });
+        this.height.addEventListener("change", () => {
+            this._apply((el) => {
+                if (!RESIZABLE_TYPES.has(el.type)) return;
+                el.height = Math.max(10, Number(this.height.value) || el.height);
+            });
+            this._commit();
+        });
 
         this.fontFamily.addEventListener("change", () => {
             this._apply((el) => {
@@ -159,14 +194,16 @@ export class PropertiesPanel {
         });
 
         this.lockBtn.addEventListener("click", () => {
-            if (!this._current) return;
-            this._current.locked = !this._current.locked;
+            if (this._selection.length === 0) return;
+            const nextLocked = !this._current.locked;
+            this._selection.forEach((el) => (el.locked = nextLocked));
             this._syncToggleButtons();
             this._commit();
         });
         this.visibleBtn.addEventListener("click", () => {
-            if (!this._current) return;
-            this._current.visible = !this._current.visible;
+            if (this._selection.length === 0) return;
+            const nextVisible = !this._current.visible;
+            this._selection.forEach((el) => (el.visible = nextVisible));
             this._syncToggleButtons();
             this.renderer.markDirty();
             this._commit();
@@ -230,9 +267,10 @@ export class PropertiesPanel {
         this.visibleBtn.classList.toggle("segmented__active", !this._current.visible);
     }
 
+    /** Aplica a mutação em TODOS os elementos selecionados (edição em lote). */
     _apply(mutate) {
-        if (!this._current) return;
-        mutate(this._current);
+        if (this._selection.length === 0) return;
+        this._selection.forEach((el) => mutate(el));
         this.renderer.markDirty();
     }
 
@@ -240,16 +278,20 @@ export class PropertiesPanel {
         this.historyManager?.pushSnapshot();
     }
 
-    _onSelectionChange(element) {
-        this._current = element;
-        this._setEnabled(Boolean(element));
-        this._toggleTypeSpecificRows(element);
-        if (!element) return;
+    _onSelectionChange(selected) {
+        this._selection = selected;
+        this._current = selected[0] ?? null;
+        this._setEnabled(selected.length > 0);
+        this._toggleTypeSpecificRows(this._current, selected.length);
+        if (!this._current) return;
 
+        const element = this._current;
         this.fill.value = element.style.fill.startsWith("#") ? element.style.fill : "#ffffff";
         this.stroke.value = element.style.stroke.startsWith("#") ? element.style.stroke : "#1e1e1e";
         this.opacity.value = Math.round(element.style.opacity * 100);
         this.rotation.value = element.rotation;
+        this.width.value = Math.round(element.width);
+        this.height.value = Math.round(element.height);
         this.fontFamily.value = element.font ?? "Inter";
         this.fontSize.value = element.fontSize ?? 14;
         this.routeType.value = element.routeType ?? "straight";
@@ -268,12 +310,15 @@ export class PropertiesPanel {
         this.endArrowBtn.classList.toggle("segmented__active", Boolean(element.endArrow));
     }
 
-    _toggleTypeSpecificRows(element) {
+    _toggleTypeSpecificRows(element, selectionCount) {
         const isText = element?.type === "text";
-        const isLine = ["line", "arrow", "orthogonal-line", "connector"].includes(element?.type);
+        const isLine = LINE_TYPES.has(element?.type);
+        const isResizable = selectionCount === 1 && RESIZABLE_TYPES.has(element?.type);
         this._textOnlyRows.forEach((row) => (row.hidden = !isText));
         this._lineOnlyRows.forEach((row) => (row.hidden = !isLine));
         this._hiddenForLineRows.forEach((row) => (row.hidden = isLine));
+        this._resizableOnlyRows.forEach((row) => (row.hidden = !isResizable));
+        this._textEmptyHint.hidden = !element || isText;
     }
 
     _setEnabled(enabled) {
@@ -281,23 +326,30 @@ export class PropertiesPanel {
     }
 
     _reorderAbsolute(direction) {
-        if (!this._current) return;
+        if (this._selection.length === 0) return;
         const zIndexes = this.scene.objects.map((o) => o.zIndex);
-        this._current.zIndex = direction > 0 ? Math.max(...zIndexes) + 1 : Math.min(...zIndexes) - 1;
+        let next = direction > 0 ? Math.max(...zIndexes) + 1 : Math.min(...zIndexes) - 1 - this._selection.length;
+        const ordered = [...this._selection].sort((a, b) => a.zIndex - b.zIndex);
+        ordered.forEach((el) => {
+            el.zIndex = next;
+            next += 1;
+        });
         this.renderer.markDirty();
         this._commit();
     }
 
-    /** Troca de posição com o vizinho imediato (avançar/recuar uma camada). */
+    /** Troca de posição com o vizinho imediato (avançar/recuar uma camada), aplicado a cada selecionado. */
     _reorderRelative(direction) {
-        if (!this._current) return;
-        const sorted = [...this.scene.objects].sort((a, b) => a.zIndex - b.zIndex);
-        const index = sorted.indexOf(this._current);
-        const swapIndex = index + direction;
-        if (swapIndex < 0 || swapIndex >= sorted.length) return;
+        if (this._selection.length === 0) return;
+        this._selection.forEach((element) => {
+            const sorted = [...this.scene.objects].sort((a, b) => a.zIndex - b.zIndex);
+            const index = sorted.indexOf(element);
+            const swapIndex = index + direction;
+            if (swapIndex < 0 || swapIndex >= sorted.length) return;
 
-        const other = sorted[swapIndex];
-        [this._current.zIndex, other.zIndex] = [other.zIndex, this._current.zIndex];
+            const other = sorted[swapIndex];
+            [element.zIndex, other.zIndex] = [other.zIndex, element.zIndex];
+        });
         this.renderer.markDirty();
         this._commit();
     }
