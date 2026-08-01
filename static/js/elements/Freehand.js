@@ -73,6 +73,6 @@ export class Freehand extends Element {
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
         const pointsAttr = this.points.map((p) => `${p.x},${p.y}`).join(" ");
-        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} stroke-linecap="round" stroke-linejoin="round" transform="rotate(${this.rotation} ${cx} ${cy})" />`;
+        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} stroke-linecap="round" stroke-linejoin="round" transform="rotate(${this.rotation} ${cx} ${cy})" />`;
     }
 }

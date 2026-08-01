@@ -33,6 +33,7 @@ export class Connector extends Element {
         routeType = "straight",
         startArrow = false,
         endArrow = true,
+        bend = null,
         style,
     } = {}) {
         super("connector", {
@@ -49,6 +50,7 @@ export class Connector extends Element {
         this.routeType = routeType;
         this.startArrow = startArrow;
         this.endArrow = endArrow;
+        this.bend = bend;
         this._resolvedStart = startPoint;
         this._resolvedEnd = endPoint;
     }
@@ -82,6 +84,7 @@ export class Connector extends Element {
         super.translate(dx, dy);
         if (!this.startObjectId) this.startPoint = { x: this.startPoint.x + dx, y: this.startPoint.y + dy };
         if (!this.endObjectId) this.endPoint = { x: this.endPoint.x + dx, y: this.endPoint.y + dy };
+        if (this.bend) this.bend = { x: this.bend.x + dx, y: this.bend.y + dy };
     }
 
     beforeHitTest(scene) {
@@ -89,19 +92,20 @@ export class Connector extends Element {
     }
 
     containsPoint(point, tolerance = 6) {
-        return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance);
+        return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance, this.bend);
     }
 
     render(ctx, camera, scene) {
         const { start, end } = this.resolveEndpoints(scene);
         const a = camera.worldToScreen(start.x, start.y);
         const b = camera.worldToScreen(end.x, end.y);
+        const bend = this.bend ? camera.worldToScreen(this.bend.x, this.bend.y) : null;
 
         ctx.save();
         this.applyStyle(ctx);
-        drawRoutePath(ctx, a, b, this.routeType);
-        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start"), a);
-        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end"), b);
+        drawRoutePath(ctx, a, b, this.routeType, bend);
+        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start", bend), a);
+        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end", bend), b);
         ctx.restore();
     }
 
@@ -115,6 +119,7 @@ export class Connector extends Element {
             routeType: this.routeType,
             startArrow: this.startArrow,
             endArrow: this.endArrow,
+            bend: this.bend,
         };
     }
 
@@ -123,11 +128,13 @@ export class Connector extends Element {
         const end = this._resolvedEnd ?? this.endPoint;
 
         const arrowLines = [];
-        if (this.startArrow) arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start"), start));
-        if (this.endArrow) arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end"), end));
+        if (this.startArrow)
+            arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start", this.bend), start));
+        if (this.endArrow)
+            arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end", this.bend), end));
 
-        return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
-            <path d="${routeSvgPath(start, end, this.routeType)}"${this.svgDashArray()} />
+        return `<g fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
+            <path d="${routeSvgPath(start, end, this.routeType, this.bend)}"${this.svgDashArray()} />
             ${arrowLines.join("\n            ")}
         </g>`;
     }

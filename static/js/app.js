@@ -389,13 +389,14 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
     });
 }
 
-/** Duplo clique num Text existente abre o editor inline (a criação via ferramenta já abre sozinha). */
+/** Duplo clique num Text existente, ou numa forma com rótulo embutido (Rectangle/Ellipse), abre o editor inline. */
 function initTextEditing({ canvasArea, camera, scene, toolManager, textEditor }) {
     canvasArea.addEventListener("dblclick", (event) => {
         const rect = canvasArea.getBoundingClientRect();
         const worldPoint = camera.screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
         const hit = scene.getObjectAtPoint(worldPoint);
-        if (!hit || hit.type !== "text" || hit.locked) return;
+        if (!hit || hit.locked) return;
+        if (hit.type !== "text" && !hit.textLabel) return;
 
         toolManager.setActiveTool("select");
         textEditor.open(hit, { isNew: false });
@@ -451,6 +452,22 @@ function initHistoryControls({ eventBus, historyManager }) {
     });
 }
 
+/** Duplicar/excluir rápidos na barra flutuante inferior — mesma lógica dos botões da aba Organizar, desabilitados sem seleção. */
+function initBottomToolbarActions(engine) {
+    const duplicateBtn = document.querySelector('[data-action="quick-duplicate"]');
+    const deleteBtn = document.querySelector('[data-action="quick-delete"]');
+
+    duplicateBtn.addEventListener("click", () => duplicateSelected(engine));
+    deleteBtn.addEventListener("click", () => deleteSelected(engine));
+
+    const syncEnabled = (selected) => {
+        duplicateBtn.disabled = selected.length === 0;
+        deleteBtn.disabled = selected.length === 0;
+    };
+    engine.eventBus.on("selection:change", syncEnabled);
+    syncEnabled(engine.selectionManager.getSelected());
+}
+
 /** Ctrl+N novo, Ctrl+O abrir, Ctrl+S salvar — os cliques nos botões já cobrem o mesmo fluxo. */
 function initFileShortcuts({ eventBus }) {
     const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
@@ -491,6 +508,7 @@ function init() {
     initObjectShortcuts(engine);
     initFileShortcuts(engine);
     initHistoryControls(engine);
+    initBottomToolbarActions(engine);
     new PropertiesPanel(engine);
     new FileMenu(engine);
     new LibraryPanel(engine);

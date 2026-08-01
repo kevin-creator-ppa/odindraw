@@ -2,6 +2,7 @@ import { Tool } from "./Tool.js";
 import { BASE_GRID_SPACING } from "../core/Renderer.js";
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 import { computeAlignmentSnap, GUIDE_COLOR } from "./alignmentGuides.js";
+import { naturalBendPoint } from "../elements/routeGeometry.js";
 
 const OVERLAY_COLOR = "#6965db";
 const HANDLE_OFFSET = 14;
@@ -19,7 +20,8 @@ const MIN_RESIZE_SIZE = 10;
  * Alças no único elemento selecionado (todas cientes da rotação atual):
  *  - Linha/seta/ortogonal/conector: 2 alças nas pontas — arrastar
  *    reshape aquele extremo (num Connector, solta sobre outro objeto
- *    religa; solta em área vazia desanexa).
+ *    religa; solta em área vazia desanexa) — e uma alça quadrada no meio
+ *    da rota — arrastar muda a trajetória (bend) sem mexer nas pontas.
  *  - Formas com área (retângulo, elipse, texto, traço livre,
  *    componente...): alças redondas nas bordas (N/E/S/W) — arrastar
  *    cria um Connector saindo dali; alças quadradas nos cantos (só em
@@ -45,6 +47,7 @@ export class SelectTool extends Tool {
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
+        this._bendDrag = null;
         this._marquee = null;
         this._activeGuides = null;
         this._unsubscribeCamera = null;
@@ -64,6 +67,7 @@ export class SelectTool extends Tool {
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
+        this._bendDrag = null;
         this._marquee = null;
         this._activeGuides = null;
         context.renderer.clearInteractive();
@@ -78,6 +82,11 @@ export class SelectTool extends Tool {
                 const endpoint = this._hitTestPointHandle(context, single, screenPoint);
                 if (endpoint) {
                     this._pointDrag = { element: single, kind: endpoint.kind };
+                    return;
+                }
+
+                if (this._hitTestBendHandle(context, single, screenPoint)) {
+                    this._bendDrag = { element: single };
                     return;
                 }
             } else {
@@ -156,6 +165,13 @@ export class SelectTool extends Tool {
         if (this._connectorDrag) {
             this._redrawOverlay(context);
             this._drawPreviewLine(context, this._connectorDrag.fromWorldPoint, point);
+            return;
+        }
+
+        if (this._bendDrag) {
+            this._bendDrag.element.bend = this._snapToGrid(context, point);
+            context.renderer.markDirty();
+            this._redrawOverlay(context);
             return;
         }
 
@@ -262,6 +278,12 @@ export class SelectTool extends Tool {
 
             this._connectorDrag = null;
             this._redrawOverlay(context);
+            return;
+        }
+
+        if (this._bendDrag) {
+            context.historyManager?.pushSnapshot();
+            this._bendDrag = null;
             return;
         }
 
@@ -472,6 +494,19 @@ export class SelectTool extends Tool {
         });
     }
 
+    /** Ponto (mundo) da alça de trajetória: o bend customizado, se houver, senão o meio "natural" da rota atual. */
+    _bendHandleWorldPoint(context, element) {
+        if (element.bend) return element.bend;
+        const [startEp, endEp] = this._getEditableEndpoints(context, element);
+        return naturalBendPoint(startEp.worldPoint, endEp.worldPoint, element.routeType);
+    }
+
+    _hitTestBendHandle(context, element, screenPoint) {
+        const worldPoint = this._bendHandleWorldPoint(context, element);
+        const s = context.camera.worldToScreen(worldPoint.x, worldPoint.y);
+        return Math.hypot(screenPoint.x - s.x, screenPoint.y - s.y) <= HANDLE_HIT_RADIUS;
+    }
+
     /** Pontos médios das 4 bordas do bbox (com offset pra fora) — arrastar cria um Connector. */
     _getBoxHandlePositions(context, element) {
         const b = element.getBounds();
@@ -547,6 +582,8 @@ export class SelectTool extends Tool {
                 context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y)
             );
             this._drawCircleHandles(context, screenPoints);
+            const bendWorld = this._bendHandleWorldPoint(context, single);
+            this._drawSquareHandles(context, [context.camera.worldToScreen(bendWorld.x, bendWorld.y)]);
             return;
         }
 

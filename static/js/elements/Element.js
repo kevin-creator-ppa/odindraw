@@ -1,5 +1,5 @@
 import { animationState } from "./animationState.js";
-import { defaultInkColor } from "../ui/theme.js";
+import { AUTO_INK, resolveInkColor } from "../ui/theme.js";
 
 let idCounter = 0;
 
@@ -8,11 +8,11 @@ function nextId(prefix) {
     return `${prefix}_${Date.now().toString(36)}${idCounter.toString(36)}`;
 }
 
-/** Novo objeto a cada chamada (não uma constante congelada) — a cor padrão depende do tema no momento da criação. */
+/** Novo objeto a cada chamada (não uma constante congelada) — stroke "auto" segue o tema até o usuário escolher uma cor explícita. */
 function defaultStyle() {
     return {
         fill: "transparent",
-        stroke: defaultInkColor(),
+        stroke: AUTO_INK,
         strokeWidth: 2,
         strokeStyle: "solid",
         opacity: 1,
@@ -64,10 +64,20 @@ export class Element {
         return localX >= this.x && localX <= this.x + this.width && localY >= this.y && localY <= this.y + this.height;
     }
 
+    /** Cor de traço resolvida (sentinela "auto" → cor do tema atual) — usada pelo toSVG() das subclasses fora do caminho de render via canvas. */
+    resolvedStroke() {
+        return resolveInkColor(this.style.stroke);
+    }
+
+    /** Idem para o preenchimento — só importa de fato pra Text, cujo "fill" é a cor da tinta, não um preenchimento de forma. */
+    resolvedFill() {
+        return resolveInkColor(this.style.fill);
+    }
+
     applyStyle(ctx) {
         ctx.globalAlpha = this.style.opacity;
-        ctx.fillStyle = this.style.fill;
-        ctx.strokeStyle = this.style.stroke;
+        ctx.fillStyle = this.resolvedFill();
+        ctx.strokeStyle = this.resolvedStroke();
         ctx.lineWidth = this.style.strokeWidth;
 
         if (this.style.strokeStyle === "dashed") {
@@ -127,14 +137,16 @@ export class Element {
             visible: this.visible,
             groupId: this.groupId,
             style: { ...this.style },
+            ...(this.textLabel ? { textLabel: { ...this.textLabel } } : {}),
         };
     }
 
-    /** Cópia independente (novo id e novo objeto de estilo) usada pela duplicação (Ctrl+D). */
+    /** Cópia independente (novo id, novo objeto de estilo e de textLabel se houver) usada pela duplicação (Ctrl+D). */
     clone() {
         const copy = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
         copy.id = nextId(this.type);
         copy.style = { ...this.style };
+        if (this.textLabel) copy.textLabel = { ...this.textLabel };
         return copy;
     }
 }

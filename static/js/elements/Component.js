@@ -20,11 +20,11 @@ export class Component extends Element {
     drawShape(ctx, x, y, width, height) {
         const commands = ICONS[this.componentType] ?? [];
         const iconHeight = this.label ? height * (1 - LABEL_AREA_RATIO) : height;
-        drawIconOnCanvas(ctx, commands, x, y, width, iconHeight, this.style.stroke, ICON_VIEWBOX);
+        drawIconOnCanvas(ctx, commands, x, y, width, iconHeight, this.resolvedStroke(), ICON_VIEWBOX);
 
         if (!this.label) return;
         ctx.save();
-        ctx.fillStyle = this.style.stroke;
+        ctx.fillStyle = this.resolvedStroke();
         ctx.font = `${Math.max(10, height * 0.13)}px Inter, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
@@ -35,9 +35,10 @@ export class Component extends Element {
     toSVG() {
         const commands = ICONS[this.componentType] ?? [];
         const iconHeight = this._iconHeight();
-        const iconSvg = iconToSvgMarkup(commands, this.x, this.y, this.width, iconHeight, this.style.stroke, ICON_VIEWBOX);
+        const stroke = this.resolvedStroke();
+        const iconSvg = iconToSvgMarkup(commands, this.x, this.y, this.width, iconHeight, stroke, ICON_VIEWBOX);
         const labelSvg = this.label
-            ? `<text x="${this.x + this.width / 2}" y="${this.y + iconHeight + this.height * 0.14}" font-family="Inter, sans-serif" font-size="${Math.max(10, this.height * 0.13)}" text-anchor="middle" fill="${this.style.stroke}">${this.label}</text>`
+            ? `<text x="${this.x + this.width / 2}" y="${this.y + iconHeight + this.height * 0.14}" font-family="Inter, sans-serif" font-size="${Math.max(10, this.height * 0.13)}" text-anchor="middle" fill="${stroke}">${this.label}</text>`
             : "";
         return `<g opacity="${this.style.opacity}">${iconSvg}${labelSvg}</g>`;
     }

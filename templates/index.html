@@ -62,17 +62,7 @@
                 <span class="diagram-name" data-diagram-name>Sem título</span>
             </div>
 
-            <div class="topbar__group">
-                <button class="btn btn--icon" data-action="undo" data-icon="undo" title="Desfazer (Ctrl+Z)"></button>
-                <button class="btn btn--icon" data-action="redo" data-icon="redo" title="Refazer (Ctrl+Y)"></button>
-            </div>
-
             <div class="topbar__group topbar__group--right">
-                <button class="btn btn--icon" data-action="zoom-out" data-icon="zoom-out" title="Zoom -"></button>
-                <span class="zoom-level" data-zoom-level>100%</span>
-                <button class="btn btn--icon" data-action="zoom-in" data-icon="zoom-in" title="Zoom +"></button>
-                <button class="btn btn--icon" data-action="zoom-fit" data-icon="zoom-fit" title="Ajustar à tela"></button>
-                <span class="divider"></span>
                 <button class="btn btn--icon" data-action="toggle-grid" data-icon="grid" data-active="true" title="Mostrar/ocultar grade"></button>
                 <button class="btn btn--icon" data-action="toggle-properties-panel" data-icon="panel-right" data-active="true" title="Mostrar/ocultar propriedades"></button>
             </div>
@@ -121,6 +111,19 @@
         <main class="canvas-area" data-canvas-area>
             <canvas id="static-canvas" class="canvas-layer"></canvas>
             <canvas id="interactive-canvas" class="canvas-layer"></canvas>
+
+            <div class="bottom-toolbar" data-bottom-toolbar>
+                <button class="btn btn--icon" data-action="undo" data-icon="undo" title="Desfazer (Ctrl+Z)"></button>
+                <button class="btn btn--icon" data-action="redo" data-icon="redo" title="Refazer (Ctrl+Y)"></button>
+                <span class="divider"></span>
+                <button class="btn btn--icon" data-action="zoom-out" data-icon="zoom-out" title="Zoom -"></button>
+                <span class="zoom-level" data-zoom-level>100%</span>
+                <button class="btn btn--icon" data-action="zoom-in" data-icon="zoom-in" title="Zoom +"></button>
+                <button class="btn btn--icon" data-action="zoom-fit" data-icon="zoom-fit" title="Ajustar à tela"></button>
+                <span class="divider"></span>
+                <button class="btn btn--icon" data-action="quick-duplicate" data-icon="duplicate" title="Duplicar (Ctrl+D)"></button>
+                <button class="btn btn--icon" data-action="quick-delete" data-icon="trash" title="Excluir (Del)"></button>
+            </div>
 
             <div class="minimap" data-minimap title="Minimapa">
                 <span class="minimap__label">Minimapa</span>
@@ -198,6 +201,17 @@
 
             <div class="tab-panel" data-tab-panel="text" hidden>
                 <div class="property" data-text-only hidden>
+                    <label>Cor do texto</label>
+                    <div class="swatches" data-swatches="text-color">
+                        <button class="swatch" data-swatch-value="#1e1e1e" style="--swatch-color:#1e1e1e" title="Preto"></button>
+                        <button class="swatch" data-swatch-value="#e03131" style="--swatch-color:#e03131" title="Vermelho"></button>
+                        <button class="swatch" data-swatch-value="#2f9e44" style="--swatch-color:#2f9e44" title="Verde"></button>
+                        <button class="swatch" data-swatch-value="#1971c2" style="--swatch-color:#1971c2" title="Azul"></button>
+                        <button class="swatch" data-swatch-value="#f08c00" style="--swatch-color:#f08c00" title="Laranja"></button>
+                        <input type="color" class="swatch swatch--custom" value="#1e1e1e" data-prop="text-color" title="Cor personalizada">
+                    </div>
+                </div>
+                <div class="property" data-text-only hidden>
                     <label>Fonte</label>
                     <select data-prop="font-family">
                         <option>Inter</option>
@@ -226,7 +240,7 @@
                         <button data-prop="align" data-value="right" title="Direita">&#8677;</button>
                     </div>
                 </div>
-                <p class="tab-panel__hint" data-text-empty-hint hidden>Selecione um texto para editar a fonte.</p>
+                <p class="tab-panel__hint" data-text-empty-hint hidden>Selecione um texto, ou dê duplo clique numa forma pra adicionar um rótulo.</p>
             </div>
 
             <div class="tab-panel" data-tab-panel="arrange">

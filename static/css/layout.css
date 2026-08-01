@@ -396,7 +396,8 @@
     color: var(--text-secondary);
 }
 
-.property input[type="color"] {
+/* Combinador de filho: não pega o input[type=color] aninhado dentro de .swatches (.swatch--custom), que tem tamanho fixo de swatch. */
+.property > input[type="color"] {
     width: 100%;
     height: 28px;
     border: 1px solid var(--border-color);
@@ -692,6 +693,38 @@
     overflow: hidden;
     outline: none;
     white-space: pre;
+}
+
+.text-editor-overlay--label {
+    padding: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: color-mix(in srgb, var(--bg-panel) 85%, transparent);
+}
+
+.bottom-toolbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 6px 8px;
+    z-index: 10;
+}
+
+.bottom-toolbar .divider {
+    height: 22px;
+}
+
+.bottom-toolbar .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .minimap {

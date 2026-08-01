@@ -1,5 +1,6 @@
 import { duplicateSelected, deleteSelected } from "../managers/objectActions.js";
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
+import { resolveInkColor } from "./theme.js";
 
 /**
  * Liga os controles da sidebar direita à seleção atual: lê o estado do
@@ -33,6 +34,7 @@ export class PropertiesPanel {
         this.rotation = document.querySelector('[data-prop="rotation"]');
         this.width = document.querySelector('[data-prop="width"]');
         this.height = document.querySelector('[data-prop="height"]');
+        this.textColor = document.querySelector('[data-prop="text-color"]');
         this.fontFamily = document.querySelector('[data-prop="font-family"]');
         this.fontSize = document.querySelector('[data-prop="font-size"]');
         this.boldBtn = document.querySelector('[data-prop="bold"]');
@@ -52,6 +54,7 @@ export class PropertiesPanel {
             this.rotation,
             this.width,
             this.height,
+            this.textColor,
             this.fontFamily,
             this.fontSize,
             this.boldBtn,
@@ -127,33 +130,35 @@ export class PropertiesPanel {
             this._commit();
         });
 
+        this._bindSwatches("text-color", this.textColor, (el, value) => this._setTextColor(el, value));
+        this.textColor.addEventListener("input", () => this._apply((el) => this._setTextColor(el, this.textColor.value)));
+        this.textColor.addEventListener("change", () => this._commit());
+
         this.fontFamily.addEventListener("change", () => {
-            this._apply((el) => {
-                if (el.font === undefined) return;
-                el.font = this.fontFamily.value;
-                el.autoSize?.();
+            this._applyText((host) => {
+                host.font = this.fontFamily.value;
+                host.autoSize?.();
             });
             this._commit();
         });
         this.fontSize.addEventListener("input", () =>
-            this._apply((el) => {
-                if (el.fontSize === undefined) return;
-                el.fontSize = Number(this.fontSize.value);
-                el.autoSize?.();
+            this._applyText((host) => {
+                host.fontSize = Number(this.fontSize.value);
+                host.autoSize?.();
             })
         );
         this.fontSize.addEventListener("change", () => this._commit());
 
-        this._bindBooleanToggle(this.boldBtn, "bold");
-        this._bindBooleanToggle(this.italicBtn, "italic");
-        this._bindBooleanToggle(this.underlineBtn, "underline");
+        this._bindTextBooleanToggle(this.boldBtn, "bold");
+        this._bindTextBooleanToggle(this.italicBtn, "italic");
+        this._bindTextBooleanToggle(this.underlineBtn, "underline");
         this._bindBooleanToggle(this.startArrowBtn, "startArrow");
         this._bindBooleanToggle(this.endArrowBtn, "endArrow");
 
         this.alignButtons.forEach((button) => {
             button.addEventListener("click", () => {
-                this._apply((el) => {
-                    if (el.align !== undefined) el.align = button.dataset.value;
+                this._applyText((host) => {
+                    host.align = button.dataset.value;
                 });
                 this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b === button));
                 this._commit();
@@ -210,7 +215,7 @@ export class PropertiesPanel {
         });
     }
 
-    /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (bold/italic/underline/startArrow/endArrow). */
+    /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (startArrow/endArrow). */
     _bindBooleanToggle(button, key) {
         button.addEventListener("click", () => {
             this._apply((el) => {
@@ -221,6 +226,56 @@ export class PropertiesPanel {
             button.classList.toggle("segmented__active", Boolean(this._current?.[key]));
             this._commit();
         });
+    }
+
+    /** Mesmo padrão, mas aplicado ao "host" de texto (o próprio Text, ou o textLabel de uma forma — ver _textHost). */
+    _bindTextBooleanToggle(button, key) {
+        button.addEventListener("click", () => {
+            this._applyText((host) => {
+                host[key] = !host[key];
+                host.autoSize?.();
+            });
+            const host = this._textHost(this._current);
+            button.classList.toggle("segmented__active", Boolean(host?.[key]));
+            this._commit();
+        });
+    }
+
+    /** Objeto que guarda font/fontSize/bold/italic/underline/align pro elemento: o próprio Text, ou o textLabel de uma forma (Rectangle/Ellipse). null se não aplicável (linhas, formas sem rótulo). */
+    _textHost(element) {
+        if (!element) return null;
+        if (element.type === "text") return element;
+        return element.textLabel ?? null;
+    }
+
+    /** Como _apply, mas a mutação recebe o "host" de texto de cada selecionado (pula quem não tem um). */
+    _applyText(mutate) {
+        if (this._selection.length === 0) return;
+        this._selection.forEach((el) => {
+            const host = this._textHost(el);
+            if (host) mutate(host);
+        });
+        this.renderer.markDirty();
+    }
+
+    /** Cor da tinta do texto: style.fill pro Text, textLabel.color pra forma com rótulo. */
+    _setTextColor(element, value) {
+        if (element.type === "text") element.style.fill = value;
+        else if (element.textLabel) element.textLabel.color = value;
+    }
+
+    _getTextColor(element) {
+        if (!element) return null;
+        if (element.type === "text") return element.style.fill;
+        return element.textLabel?.color ?? null;
+    }
+
+    /** Valor pro <input type=color>: hex direto, resolve o sentinela "auto" pro tema atual, ou usa o fallback (ex.: "transparent" não é um hex válido). */
+    _colorInputValue(raw, fallbackHex) {
+        if (!raw) return fallbackHex;
+        if (raw.startsWith("#")) return raw;
+        if (raw === "auto") return resolveInkColor(raw);
+        return fallbackHex;
     }
 
     /** Swatches de cor rápida: cada clique escreve no input[type=color] correspondente e emite 'input'. */
@@ -286,14 +341,12 @@ export class PropertiesPanel {
         if (!this._current) return;
 
         const element = this._current;
-        this.fill.value = element.style.fill.startsWith("#") ? element.style.fill : "#ffffff";
-        this.stroke.value = element.style.stroke.startsWith("#") ? element.style.stroke : "#1e1e1e";
+        this.fill.value = this._colorInputValue(element.style.fill, "#ffffff");
+        this.stroke.value = this._colorInputValue(element.style.stroke, "#1e1e1e");
         this.opacity.value = Math.round(element.style.opacity * 100);
         this.rotation.value = element.rotation;
         this.width.value = Math.round(element.width);
         this.height.value = Math.round(element.height);
-        this.fontFamily.value = element.font ?? "Inter";
-        this.fontSize.value = element.fontSize ?? 14;
         this.routeType.value = element.routeType ?? "straight";
 
         this._syncSwatchActive(document.querySelector('[data-swatches="stroke"]'), element.style.stroke);
@@ -302,16 +355,23 @@ export class PropertiesPanel {
         this._syncSegmentedActive(this.strokeStyleGroup, element.style.strokeStyle);
         this._syncToggleButtons();
 
-        this.boldBtn.classList.toggle("segmented__active", Boolean(element.bold));
-        this.italicBtn.classList.toggle("segmented__active", Boolean(element.italic));
-        this.underlineBtn.classList.toggle("segmented__active", Boolean(element.underline));
-        this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b.dataset.value === element.align));
+        const textHost = this._textHost(element);
+        const textColor = this._getTextColor(element);
+        this.textColor.value = this._colorInputValue(textColor, "#1e1e1e");
+        this._syncSwatchActive(document.querySelector('[data-swatches="text-color"]'), textColor);
+        this.fontFamily.value = textHost?.font ?? "Inter";
+        this.fontSize.value = textHost?.fontSize ?? 14;
+        this.boldBtn.classList.toggle("segmented__active", Boolean(textHost?.bold));
+        this.italicBtn.classList.toggle("segmented__active", Boolean(textHost?.italic));
+        this.underlineBtn.classList.toggle("segmented__active", Boolean(textHost?.underline));
+        this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b.dataset.value === textHost?.align));
+
         this.startArrowBtn.classList.toggle("segmented__active", Boolean(element.startArrow));
         this.endArrowBtn.classList.toggle("segmented__active", Boolean(element.endArrow));
     }
 
     _toggleTypeSpecificRows(element, selectionCount) {
-        const isText = element?.type === "text";
+        const isText = Boolean(this._textHost(element));
         const isLine = LINE_TYPES.has(element?.type);
         const isResizable = selectionCount === 1 && RESIZABLE_TYPES.has(element?.type);
         this._textOnlyRows.forEach((row) => (row.hidden = !isText));

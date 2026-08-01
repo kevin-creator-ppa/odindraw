@@ -24,6 +24,7 @@ export class Line extends Element {
         startArrow = false,
         endArrow = false,
         routeType = "straight",
+        bend = null,
     } = {}) {
         super(type, {
             x: Math.min(x1, x2),
@@ -39,6 +40,7 @@ export class Line extends Element {
         this.startArrow = startArrow;
         this.endArrow = endArrow;
         this.routeType = routeType;
+        this.bend = bend;
     }
 
     translate(dx, dy) {
@@ -47,6 +49,7 @@ export class Line extends Element {
         this.y1 += dy;
         this.x2 += dx;
         this.y2 += dy;
+        if (this.bend) this.bend = { x: this.bend.x + dx, y: this.bend.y + dy };
     }
 
     /** Move um dos extremos (alça de edição de pontos do SelectTool) e ressincroniza o bbox. */
@@ -67,16 +70,24 @@ export class Line extends Element {
     render(ctx, camera) {
         const a = camera.worldToScreen(this.x1, this.y1);
         const b = camera.worldToScreen(this.x2, this.y2);
+        const bend = this.bend ? camera.worldToScreen(this.bend.x, this.bend.y) : null;
         ctx.save();
         this.applyStyle(ctx);
-        drawRoutePath(ctx, a, b, this.routeType);
-        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start"), a);
-        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end"), b);
+        drawRoutePath(ctx, a, b, this.routeType, bend);
+        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start", bend), a);
+        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end", bend), b);
         ctx.restore();
     }
 
     containsPoint(point, tolerance = 6) {
-        return routeContainsPoint(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }, this.routeType, tolerance);
+        return routeContainsPoint(
+            point,
+            { x: this.x1, y: this.y1 },
+            { x: this.x2, y: this.y2 },
+            this.routeType,
+            tolerance,
+            this.bend
+        );
     }
 
     serialize() {
@@ -89,6 +100,7 @@ export class Line extends Element {
             startArrow: this.startArrow,
             endArrow: this.endArrow,
             routeType: this.routeType,
+            bend: this.bend,
         };
     }
 
@@ -96,12 +108,14 @@ export class Line extends Element {
         const start = { x: this.x1, y: this.y1 };
         const end = { x: this.x2, y: this.y2 };
         const arrowLines = [
-            ...(this.startArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start"), start) : []),
-            ...(this.endArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end"), end) : []),
+            ...(this.startArrow
+                ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start", this.bend), start)
+                : []),
+            ...(this.endArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end", this.bend), end) : []),
         ].join("");
 
-        return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
-            <path d="${routeSvgPath(start, end, this.routeType)}" />
+        return `<g fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
+            <path d="${routeSvgPath(start, end, this.routeType, this.bend)}" />
             ${arrowLines}
         </g>`;
     }

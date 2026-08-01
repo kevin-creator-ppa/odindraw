@@ -1,5 +1,5 @@
 import { Element } from "./Element.js";
-import { defaultInkColor } from "../ui/theme.js";
+import { AUTO_INK } from "../ui/theme.js";
 
 let measureCtx = null;
 function getMeasureCtx() {
@@ -31,7 +31,7 @@ export class Text extends Element {
         underline = false,
         style,
     } = {}) {
-        super("text", { x, y, width: 40, height: fontSize * LINE_HEIGHT_RATIO, style: { fill: defaultInkColor(), strokeWidth: 0, ...style } });
+        super("text", { x, y, width: 40, height: fontSize * LINE_HEIGHT_RATIO, style: { fill: AUTO_INK, strokeWidth: 0, ...style } });
         this.content = content;
         this.font = font;
         this.fontSize = fontSize;
@@ -97,7 +97,7 @@ export class Text extends Element {
         const weight = this.bold ? ' font-weight="bold"' : "";
         const styleAttr = this.italic ? ' font-style="italic"' : "";
         const decoration = this.underline ? ' text-decoration="underline"' : "";
-        return `<text font-family="${this.font}" font-size="${this.fontSize}" text-anchor="${anchor}"${weight}${styleAttr}${decoration} fill="${this.style.fill}">${tspans}</text>`;
+        return `<text font-family="${this.font}" font-size="${this.fontSize}" text-anchor="${anchor}"${weight}${styleAttr}${decoration} fill="${this.resolvedFill()}">${tspans}</text>`;
     }
 
     serialize() {
