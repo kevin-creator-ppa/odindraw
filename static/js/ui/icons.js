@@ -69,8 +69,8 @@ export const ICONS = {
         '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.6 10.6 0 0 1 22 12s-1 2-3 3.8M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.5 0 2.8-.3 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
     ),
     "dash-motion": svg('<path d="M3 12h3M10 12h3M17 12h3"/>'),
-    "arrow-start": svg('<path d="M21 12H5M11 6l-6 6 6 6"/>'),
-    "arrow-end": svg('<path d="M3 12h16M13 6l6 6-6 6"/>'),
+    "flip-horizontal": svg('<path d="M12 3v18"/><path d="M18 7l3 3-3 3"/><path d="M6 7l-3 3 3 3"/>'),
+    "flip-vertical": svg('<path d="M3 12h18"/><path d="M7 18l3 3 3-3"/><path d="M7 6l3-3 3 3"/>'),
 };
 
 /** Injeta o SVG correspondente em todo elemento `[data-icon]` da página. */

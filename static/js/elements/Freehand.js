@@ -48,10 +48,11 @@ export class Freehand extends Element {
         const rad = (-this.rotation * Math.PI) / 180;
         const dx = point.x - cx;
         const dy = point.y - cy;
-        const localPoint = {
-            x: cx + (dx * Math.cos(rad) - dy * Math.sin(rad)),
-            y: cy + (dx * Math.sin(rad) + dy * Math.cos(rad)),
-        };
+        let localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+        let localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+        if (this.flipX) localX = -localX;
+        if (this.flipY) localY = -localY;
+        const localPoint = { x: cx + localX, y: cy + localY };
 
         for (let i = 0; i < this.points.length - 1; i++) {
             if (distanceToSegment(localPoint, this.points[i], this.points[i + 1]) <= tolerance) return true;
@@ -70,9 +71,7 @@ export class Freehand extends Element {
     }
 
     toSVG() {
-        const cx = this.x + this.width / 2;
-        const cy = this.y + this.height / 2;
         const pointsAttr = this.points.map((p) => `${p.x},${p.y}`).join(" ");
-        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} stroke-linecap="round" stroke-linejoin="round" transform="rotate(${this.rotation} ${cx} ${cy})" />`;
+        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} stroke-linecap="round" stroke-linejoin="round"${this.svgTransform()} />`;
     }
 }

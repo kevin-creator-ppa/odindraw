@@ -36,6 +36,6 @@ export class Ellipse extends Element {
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
         const labelSvg = labelToSVG(this.textLabel, { x: this.x, y: this.y, width: this.width, height: this.height });
-        return `<g transform="rotate(${this.rotation} ${cx} ${cy})"><ellipse cx="${cx}" cy="${cy}" rx="${Math.abs(this.width) / 2}" ry="${Math.abs(this.height) / 2}" fill="${this.resolvedFill()}" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} />${labelSvg}</g>`;
+        return `<g${this.svgTransform()}><ellipse cx="${cx}" cy="${cy}" rx="${Math.abs(this.width) / 2}" ry="${Math.abs(this.height) / 2}" fill="${this.resolvedFill()}" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} />${labelSvg}</g>`;
     }
 }

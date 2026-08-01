@@ -25,7 +25,7 @@ function defaultStyle() {
  * render(ctx, camera), containsPoint(worldPoint), toSVG() e serialize().
  */
 export class Element {
-    constructor(type, { x, y, width, height, rotation = 0, style = {} }) {
+    constructor(type, { x, y, width, height, rotation = 0, flipX = false, flipY = false, style = {} }) {
         this.id = nextId(type);
         this.type = type;
         this.x = x;
@@ -33,6 +33,8 @@ export class Element {
         this.width = width;
         this.height = height;
         this.rotation = rotation;
+        this.flipX = flipX;
+        this.flipY = flipY;
         this.zIndex = null;
         this.locked = false;
         this.visible = true;
@@ -102,7 +104,7 @@ export class Element {
         return "";
     }
 
-    /** Aplica a transformação de tela (posição + rotação) e delega o desenho local à subclasse. */
+    /** Aplica a transformação de tela (posição + rotação + espelhamento) e delega o desenho local à subclasse. */
     render(ctx, camera) {
         const topLeft = camera.worldToScreen(this.x, this.y);
         const w = this.width * camera.zoom;
@@ -112,12 +114,23 @@ export class Element {
         this.applyStyle(ctx);
         ctx.translate(topLeft.x + w / 2, topLeft.y + h / 2);
         ctx.rotate((this.rotation * Math.PI) / 180);
+        ctx.scale(this.flipX ? -1 : 1, this.flipY ? -1 : 1);
         this.drawShape(ctx, -w / 2, -h / 2, w, h);
         ctx.restore();
     }
 
     /** Sobrescrito por cada subclasse: desenha no espaço local (origem no centro do bounding box). */
     drawShape(ctx, x, y, width, height) {}
+
+    /** Atributo `transform` do SVG combinando rotação e espelhamento em torno do centro do bbox — usado pelo toSVG() das subclasses. */
+    svgTransform() {
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+        const sx = this.flipX ? -1 : 1;
+        const sy = this.flipY ? -1 : 1;
+        if (!this.rotation && sx === 1 && sy === 1) return "";
+        return ` transform="translate(${cx} ${cy}) rotate(${this.rotation}) scale(${sx} ${sy}) translate(${-cx} ${-cy})"`;
+    }
 
     toSVG() {
         return "";
@@ -132,6 +145,8 @@ export class Element {
             width: this.width,
             height: this.height,
             rotation: this.rotation,
+            flipX: this.flipX,
+            flipY: this.flipY,
             zIndex: this.zIndex,
             locked: this.locked,
             visible: this.visible,

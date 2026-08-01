@@ -40,7 +40,7 @@ export class Component extends Element {
         const labelSvg = this.label
             ? `<text x="${this.x + this.width / 2}" y="${this.y + iconHeight + this.height * 0.14}" font-family="Inter, sans-serif" font-size="${Math.max(10, this.height * 0.13)}" text-anchor="middle" fill="${stroke}">${this.label}</text>`
             : "";
-        return `<g opacity="${this.style.opacity}">${iconSvg}${labelSvg}</g>`;
+        return `<g opacity="${this.style.opacity}"${this.svgTransform()}>${iconSvg}${labelSvg}</g>`;
     }
 
     serialize() {

@@ -191,11 +191,12 @@
                     </select>
                 </div>
                 <div class="property" data-line-only hidden>
-                    <label>Setas</label>
-                    <div class="segmented">
-                        <button data-prop="start-arrow" data-icon="arrow-start" title="Seta no início"></button>
-                        <button data-prop="end-arrow" data-icon="arrow-end" title="Seta no fim"></button>
-                    </div>
+                    <label>Ponta inicial</label>
+                    <select data-prop="start-arrow-type"></select>
+                </div>
+                <div class="property" data-line-only hidden>
+                    <label>Ponta final</label>
+                    <select data-prop="end-arrow-type"></select>
                 </div>
             </div>
 
@@ -255,6 +256,13 @@
                 <div class="property" data-hide-for-line>
                     <label>Rotação</label>
                     <input type="number" min="-180" max="180" value="0" data-prop="rotation">
+                </div>
+                <div class="property" data-hide-for-line>
+                    <label>Espelhar</label>
+                    <div class="segmented">
+                        <button data-prop="flip-h" data-icon="flip-horizontal" title="Espelhar horizontal"></button>
+                        <button data-prop="flip-v" data-icon="flip-vertical" title="Espelhar vertical"></button>
+                    </div>
                 </div>
                 <div class="property">
                     <label>Camada</label>

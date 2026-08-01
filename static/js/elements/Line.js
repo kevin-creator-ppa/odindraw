@@ -1,6 +1,14 @@
 import { Element } from "./Element.js";
-import { drawArrowhead, arrowheadSvgLines } from "./arrowhead.js";
+import { drawMarker, markerSvg } from "./arrowhead.js";
 import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from "./routeGeometry.js";
+
+/** `true`/`false` (formato antigo) vira "open"/"none"; string passa direto; sem valor usa o padrão. */
+function normalizeArrowType(value, fallback) {
+    if (value === true) return "open";
+    if (value === false) return "none";
+    if (typeof value === "string") return value;
+    return fallback;
+}
 
 /**
  * Elemento definido por dois pontos (x1,y1)-(x2,y2), não por um bounding
@@ -8,9 +16,10 @@ import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from 
  * só para participar do culling/seleção por área; o desenho de fato usa
  * sempre os pontos.
  *
- * `routeType` (reta/ortogonal/curva) e seta em cada ponta (startArrow/
- * endArrow) são independentes e editáveis depois de criada — Arrow.js e
- * OrthogonalLine.js só mudam os padrões (endArrow / routeType) pra
+ * `routeType` (reta/ortogonal/curva) e o marcador em cada ponta
+ * (startArrowType/endArrowType — ver arrowhead.js pros tipos) são
+ * independentes e editáveis depois de criada — Arrow.js e
+ * OrthogonalLine.js só mudam os padrões (endArrowType / routeType) pra
  * combinar com a ferramenta que os cria.
  */
 export class Line extends Element {
@@ -21,8 +30,10 @@ export class Line extends Element {
         y2,
         style,
         type = "line",
-        startArrow = false,
-        endArrow = false,
+        startArrow,
+        endArrow,
+        startArrowType,
+        endArrowType,
         routeType = "straight",
         bend = null,
     } = {}) {
@@ -37,8 +48,8 @@ export class Line extends Element {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
-        this.startArrow = startArrow;
-        this.endArrow = endArrow;
+        this.startArrowType = normalizeArrowType(startArrowType ?? startArrow, "none");
+        this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "none");
         this.routeType = routeType;
         this.bend = bend;
     }
@@ -74,8 +85,8 @@ export class Line extends Element {
         ctx.save();
         this.applyStyle(ctx);
         drawRoutePath(ctx, a, b, this.routeType, bend);
-        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start", bend), a);
-        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end", bend), b);
+        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", bend), a);
+        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", bend), b);
         ctx.restore();
     }
 
@@ -97,8 +108,8 @@ export class Line extends Element {
             y1: this.y1,
             x2: this.x2,
             y2: this.y2,
-            startArrow: this.startArrow,
-            endArrow: this.endArrow,
+            startArrowType: this.startArrowType,
+            endArrowType: this.endArrowType,
             routeType: this.routeType,
             bend: this.bend,
         };
@@ -107,16 +118,14 @@ export class Line extends Element {
     toSVG() {
         const start = { x: this.x1, y: this.y1 };
         const end = { x: this.x2, y: this.y2 };
-        const arrowLines = [
-            ...(this.startArrow
-                ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start", this.bend), start)
-                : []),
-            ...(this.endArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end", this.bend), end) : []),
-        ].join("");
+        const stroke = this.resolvedStroke();
+        const markers =
+            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.bend), start, stroke) +
+            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.bend), end, stroke);
 
-        return `<g fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
+        return `<g fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
             <path d="${routeSvgPath(start, end, this.routeType, this.bend)}" />
-            ${arrowLines}
+            ${markers}
         </g>`;
     }
 }

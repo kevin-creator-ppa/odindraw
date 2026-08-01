@@ -97,7 +97,7 @@ export class Text extends Element {
         const weight = this.bold ? ' font-weight="bold"' : "";
         const styleAttr = this.italic ? ' font-style="italic"' : "";
         const decoration = this.underline ? ' text-decoration="underline"' : "";
-        return `<text font-family="${this.font}" font-size="${this.fontSize}" text-anchor="${anchor}"${weight}${styleAttr}${decoration} fill="${this.resolvedFill()}">${tspans}</text>`;
+        return `<text font-family="${this.font}" font-size="${this.fontSize}" text-anchor="${anchor}"${weight}${styleAttr}${decoration} fill="${this.resolvedFill()}"${this.svgTransform()}>${tspans}</text>`;
     }
 
     serialize() {

@@ -1,6 +1,7 @@
 import { duplicateSelected, deleteSelected } from "../managers/objectActions.js";
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 import { resolveInkColor } from "./theme.js";
+import { MARKER_TYPES } from "../elements/arrowhead.js";
 
 /**
  * Liga os controles da sidebar direita à seleção atual: lê o estado do
@@ -42,8 +43,12 @@ export class PropertiesPanel {
         this.underlineBtn = document.querySelector('[data-prop="underline"]');
         this.alignButtons = document.querySelectorAll('[data-prop="align"]');
         this.routeType = document.querySelector('[data-prop="route-type"]');
-        this.startArrowBtn = document.querySelector('[data-prop="start-arrow"]');
-        this.endArrowBtn = document.querySelector('[data-prop="end-arrow"]');
+        this.startArrowType = document.querySelector('[data-prop="start-arrow-type"]');
+        this.endArrowType = document.querySelector('[data-prop="end-arrow-type"]');
+        this._populateMarkerOptions(this.startArrowType);
+        this._populateMarkerOptions(this.endArrowType);
+        this.flipHBtn = document.querySelector('[data-prop="flip-h"]');
+        this.flipVBtn = document.querySelector('[data-prop="flip-v"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
 
@@ -61,8 +66,10 @@ export class PropertiesPanel {
             this.italicBtn,
             this.underlineBtn,
             this.routeType,
-            this.startArrowBtn,
-            this.endArrowBtn,
+            this.startArrowType,
+            this.endArrowType,
+            this.flipHBtn,
+            this.flipVBtn,
             this.lockBtn,
             this.visibleBtn,
             ...this.alignButtons,
@@ -83,6 +90,15 @@ export class PropertiesPanel {
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected));
         this._setEnabled(false);
+    }
+
+    _populateMarkerOptions(select) {
+        MARKER_TYPES.forEach(({ value, label }) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = label;
+            select.appendChild(option);
+        });
     }
 
     _bindTabs() {
@@ -152,8 +168,22 @@ export class PropertiesPanel {
         this._bindTextBooleanToggle(this.boldBtn, "bold");
         this._bindTextBooleanToggle(this.italicBtn, "italic");
         this._bindTextBooleanToggle(this.underlineBtn, "underline");
-        this._bindBooleanToggle(this.startArrowBtn, "startArrow");
-        this._bindBooleanToggle(this.endArrowBtn, "endArrow");
+
+        this.startArrowType.addEventListener("change", () => {
+            this._apply((el) => {
+                if (el.startArrowType !== undefined) el.startArrowType = this.startArrowType.value;
+            });
+            this._commit();
+        });
+        this.endArrowType.addEventListener("change", () => {
+            this._apply((el) => {
+                if (el.endArrowType !== undefined) el.endArrowType = this.endArrowType.value;
+            });
+            this._commit();
+        });
+
+        this._bindBooleanToggle(this.flipHBtn, "flipX");
+        this._bindBooleanToggle(this.flipVBtn, "flipY");
 
         this.alignButtons.forEach((button) => {
             button.addEventListener("click", () => {
@@ -215,7 +245,7 @@ export class PropertiesPanel {
         });
     }
 
-    /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (startArrow/endArrow). */
+    /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (ex.: flipX/flipY). */
     _bindBooleanToggle(button, key) {
         button.addEventListener("click", () => {
             this._apply((el) => {
@@ -366,8 +396,11 @@ export class PropertiesPanel {
         this.underlineBtn.classList.toggle("segmented__active", Boolean(textHost?.underline));
         this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b.dataset.value === textHost?.align));
 
-        this.startArrowBtn.classList.toggle("segmented__active", Boolean(element.startArrow));
-        this.endArrowBtn.classList.toggle("segmented__active", Boolean(element.endArrow));
+        this.startArrowType.value = element.startArrowType ?? "none";
+        this.endArrowType.value = element.endArrowType ?? "none";
+
+        this.flipHBtn.classList.toggle("segmented__active", Boolean(element.flipX));
+        this.flipVBtn.classList.toggle("segmented__active", Boolean(element.flipY));
     }
 
     _toggleTypeSpecificRows(element, selectionCount) {

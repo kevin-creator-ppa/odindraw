@@ -1,6 +1,14 @@
 import { Element } from "./Element.js";
-import { drawArrowhead, arrowheadSvgLines } from "./arrowhead.js";
+import { drawMarker, markerSvg } from "./arrowhead.js";
 import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from "./routeGeometry.js";
+
+/** `true`/`false` (formato antigo) vira "open"/"none"; string passa direto; sem valor usa o padrão. */
+function normalizeArrowType(value, fallback) {
+    if (value === true) return "open";
+    if (value === false) return "none";
+    if (typeof value === "string") return value;
+    return fallback;
+}
 
 /** Ponto na borda do bbox, na direção de `towardPoint` a partir do centro — "desliza" pela borda conforme o objeto se move. */
 function edgeAnchorPoint(bounds, towardPoint) {
@@ -31,8 +39,10 @@ export class Connector extends Element {
         startPoint,
         endPoint,
         routeType = "straight",
-        startArrow = false,
-        endArrow = true,
+        startArrow,
+        endArrow,
+        startArrowType,
+        endArrowType,
         bend = null,
         style,
     } = {}) {
@@ -48,8 +58,8 @@ export class Connector extends Element {
         this.startPoint = startPoint;
         this.endPoint = endPoint;
         this.routeType = routeType;
-        this.startArrow = startArrow;
-        this.endArrow = endArrow;
+        this.startArrowType = normalizeArrowType(startArrowType ?? startArrow, "none");
+        this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "open");
         this.bend = bend;
         this._resolvedStart = startPoint;
         this._resolvedEnd = endPoint;
@@ -104,8 +114,8 @@ export class Connector extends Element {
         ctx.save();
         this.applyStyle(ctx);
         drawRoutePath(ctx, a, b, this.routeType, bend);
-        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start", bend), a);
-        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end", bend), b);
+        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", bend), a);
+        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", bend), b);
         ctx.restore();
     }
 
@@ -117,8 +127,8 @@ export class Connector extends Element {
             startPoint: this._resolvedStart ?? this.startPoint,
             endPoint: this._resolvedEnd ?? this.endPoint,
             routeType: this.routeType,
-            startArrow: this.startArrow,
-            endArrow: this.endArrow,
+            startArrowType: this.startArrowType,
+            endArrowType: this.endArrowType,
             bend: this.bend,
         };
     }
@@ -126,16 +136,14 @@ export class Connector extends Element {
     toSVG() {
         const start = this._resolvedStart ?? this.startPoint;
         const end = this._resolvedEnd ?? this.endPoint;
+        const stroke = this.resolvedStroke();
+        const markers =
+            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.bend), start, stroke) +
+            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.bend), end, stroke);
 
-        const arrowLines = [];
-        if (this.startArrow)
-            arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start", this.bend), start));
-        if (this.endArrow)
-            arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end", this.bend), end));
-
-        return `<g fill="none" stroke="${this.resolvedStroke()}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
+        return `<g fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
             <path d="${routeSvgPath(start, end, this.routeType, this.bend)}"${this.svgDashArray()} />
-            ${arrowLines.join("\n            ")}
+            ${markers}
         </g>`;
     }
 }
