@@ -12,12 +12,13 @@ const DND_MIME = "application/x-odindraw-component";
  * arrastar-e-soltar (drag-and-drop nativo do navegador).
  */
 export class LibraryPanel {
-    constructor({ scene, camera, renderer, selectionManager, toolManager }) {
+    constructor({ scene, camera, renderer, selectionManager, toolManager, historyManager }) {
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
         this.selectionManager = selectionManager;
         this.toolManager = toolManager;
+        this.historyManager = historyManager;
 
         this.panel = document.querySelector("[data-library-panel]");
         this.body = document.querySelector("[data-library-body]");
@@ -183,5 +184,6 @@ export class LibraryPanel {
         this.renderer.markDirty();
         this.selectionManager.select(component);
         this.toolManager.setActiveTool("select");
+        this.historyManager?.pushSnapshot();
     }
 }

@@ -1,19 +1,24 @@
 import { Tool } from "./Tool.js";
+import { BASE_GRID_SPACING } from "../core/Renderer.js";
 
 const OVERLAY_COLOR = "#6965db";
 const OVERLAY_PADDING = 4;
 
 /**
  * Ferramenta padrão: clique seleciona o elemento sob o cursor (o de
- * maior zIndex), arrastar move o elemento selecionado. Redimensionar,
- * rotacionar pelo mouse e seleção múltipla ficam para um refinamento
- * posterior — por enquanto a seleção mostra só o contorno.
+ * maior zIndex), arrastar move o elemento selecionado — encaixando na
+ * grade quando ela está visível. Objetos bloqueados são selecionáveis
+ * (para poder desbloquear) mas não arrastáveis. Redimensionar e
+ * rotacionar pelo mouse, e seleção múltipla, ficam para um refinamento
+ * posterior.
  */
 export class SelectTool extends Tool {
     constructor() {
         super("select", { cursor: "default" });
         this._dragTarget = null;
-        this._lastPoint = null;
+        this._dragOriginPointer = null;
+        this._dragOriginXY = null;
+        this._moved = false;
         this._unsubscribeCamera = null;
     }
 
@@ -32,22 +37,39 @@ export class SelectTool extends Tool {
     onPointerDown(context, point) {
         const target = context.scene.getObjectAtPoint(point);
         context.selectionManager.select(target);
-        this._dragTarget = target;
-        this._lastPoint = point;
+
+        this._dragTarget = target && !target.locked ? target : null;
+        this._dragOriginPointer = point;
+        this._dragOriginXY = target ? { x: target.x, y: target.y } : null;
+        this._moved = false;
         this._redrawOverlay(context);
     }
 
     onPointerMove(context, point) {
         if (!this._dragTarget) return;
-        this._dragTarget.translate(point.x - this._lastPoint.x, point.y - this._lastPoint.y);
-        this._lastPoint = point;
+
+        let targetX = this._dragOriginXY.x + (point.x - this._dragOriginPointer.x);
+        let targetY = this._dragOriginXY.y + (point.y - this._dragOriginPointer.y);
+
+        if (context.renderer.gridEnabled) {
+            targetX = Math.round(targetX / BASE_GRID_SPACING) * BASE_GRID_SPACING;
+            targetY = Math.round(targetY / BASE_GRID_SPACING) * BASE_GRID_SPACING;
+        }
+
+        this._dragTarget.translate(targetX - this._dragTarget.x, targetY - this._dragTarget.y);
+        this._moved = true;
         context.renderer.markDirty();
         this._redrawOverlay(context);
     }
 
-    onPointerUp() {
+    onPointerUp(context) {
+        if (this._dragTarget && this._moved) {
+            context.historyManager?.pushSnapshot();
+        }
         this._dragTarget = null;
-        this._lastPoint = null;
+        this._dragOriginPointer = null;
+        this._dragOriginXY = null;
+        this._moved = false;
     }
 
     _redrawOverlay(context) {

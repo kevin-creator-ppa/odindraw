@@ -473,13 +473,13 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 10;
+    overflow: hidden;
 }
 
-.minimap__label {
-    font-size: 11px;
-    color: var(--text-secondary);
+.minimap__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
 }

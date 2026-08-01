@@ -18,10 +18,10 @@ const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
  * cursor do canvas coerente com a ferramenta selecionada.
  */
 export class ToolManager {
-    constructor({ canvasArea, camera, scene, eventBus, renderer, selectionManager, tools }) {
+    constructor({ canvasArea, camera, scene, eventBus, renderer, selectionManager, historyManager, tools }) {
         this.canvasArea = canvasArea;
         this.eventBus = eventBus;
-        this._context = { camera, scene, eventBus, renderer, selectionManager };
+        this._context = { camera, scene, eventBus, renderer, selectionManager, historyManager };
         this._tools = new Map(tools.map((tool) => [tool.name, tool]));
         this._activeTool = null;
 

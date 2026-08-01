@@ -5,16 +5,22 @@ import { duplicateSelected, deleteSelected } from "../managers/objectActions.js"
  * estado atual quando a seleção muda e escreve de volta a cada edição.
  * Sem seleção, os controles ficam desabilitados.
  *
+ * Edições "ao vivo" (arrastar um slider) atualizam o desenho a cada
+ * evento `input`, mas só entram no histórico de desfazer quando o
+ * usuário termina o gesto (`change`) — senão cada pixel de um arraste
+ * de opacidade viraria um passo de undo.
+ *
  * "Tipo de rota" só aparece para conectores; "Rotação" some para eles
  * (a posição do conector é sempre recalculada a partir dos objetos
  * ligados, rotação não se aplica). Alinhamento de texto e grupos ficam
  * para um refinamento posterior.
  */
 export class PropertiesPanel {
-    constructor({ scene, selectionManager, renderer, eventBus }) {
+    constructor({ scene, selectionManager, renderer, eventBus, historyManager }) {
         this.scene = scene;
         this.selectionManager = selectionManager;
         this.renderer = renderer;
+        this.historyManager = historyManager;
         this._current = null;
 
         this.fill = document.querySelector('[data-prop="fill"]');
@@ -26,6 +32,8 @@ export class PropertiesPanel {
         this.fontFamily = document.querySelector('[data-prop="font-family"]');
         this.fontSize = document.querySelector('[data-prop="font-size"]');
         this.routeType = document.querySelector('[data-prop="route-type"]');
+        this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
+        this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
 
         this.inputs = [
             this.fill,
@@ -35,6 +43,8 @@ export class PropertiesPanel {
             this.fontFamily,
             this.fontSize,
             this.routeType,
+            this.lockBtn,
+            this.visibleBtn,
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
@@ -57,27 +67,34 @@ export class PropertiesPanel {
         this._bindSegmented(this.strokeStyleGroup, (el, value) => (el.style.strokeStyle = value));
 
         this.stroke.addEventListener("input", () => this._apply((el) => (el.style.stroke = this.stroke.value)));
+        this.stroke.addEventListener("change", () => this._commit());
         this.fill.addEventListener("input", () => this._apply((el) => (el.style.fill = this.fill.value)));
+        this.fill.addEventListener("change", () => this._commit());
 
         this.opacity.addEventListener("input", () =>
             this._apply((el) => (el.style.opacity = Number(this.opacity.value) / 100))
         );
+        this.opacity.addEventListener("change", () => this._commit());
         this.rotation.addEventListener("input", () => this._apply((el) => (el.rotation = Number(this.rotation.value))));
-        this.fontFamily.addEventListener("change", () =>
+        this.rotation.addEventListener("change", () => this._commit());
+        this.fontFamily.addEventListener("change", () => {
             this._apply((el) => {
                 if (el.font !== undefined) el.font = this.fontFamily.value;
-            })
-        );
+            });
+            this._commit();
+        });
         this.fontSize.addEventListener("input", () =>
             this._apply((el) => {
                 if (el.fontSize !== undefined) el.fontSize = Number(this.fontSize.value);
             })
         );
-        this.routeType.addEventListener("change", () =>
+        this.fontSize.addEventListener("change", () => this._commit());
+        this.routeType.addEventListener("change", () => {
             this._apply((el) => {
                 if (el.routeType !== undefined) el.routeType = this.routeType.value;
-            })
-        );
+            });
+            this._commit();
+        });
 
         document.querySelector('[data-action="send-back"]').addEventListener("click", () => this._reorderAbsolute(-1));
         document.querySelector('[data-action="bring-front"]').addEventListener("click", () => this._reorderAbsolute(1));
@@ -89,10 +106,34 @@ export class PropertiesPanel {
             .addEventListener("click", () => this._reorderRelative(1));
 
         document.querySelector('[data-action="duplicate-selected"]').addEventListener("click", () => {
-            duplicateSelected({ scene: this.scene, selectionManager: this.selectionManager, renderer: this.renderer });
+            duplicateSelected({
+                scene: this.scene,
+                selectionManager: this.selectionManager,
+                renderer: this.renderer,
+                historyManager: this.historyManager,
+            });
         });
         document.querySelector('[data-action="delete-selected"]').addEventListener("click", () => {
-            deleteSelected({ scene: this.scene, selectionManager: this.selectionManager, renderer: this.renderer });
+            deleteSelected({
+                scene: this.scene,
+                selectionManager: this.selectionManager,
+                renderer: this.renderer,
+                historyManager: this.historyManager,
+            });
+        });
+
+        this.lockBtn.addEventListener("click", () => {
+            if (!this._current) return;
+            this._current.locked = !this._current.locked;
+            this._syncToggleButtons();
+            this._commit();
+        });
+        this.visibleBtn.addEventListener("click", () => {
+            if (!this._current) return;
+            this._current.visible = !this._current.visible;
+            this._syncToggleButtons();
+            this.renderer.markDirty();
+            this._commit();
         });
     }
 
@@ -105,6 +146,7 @@ export class PropertiesPanel {
                 if (value !== "transparent") colorInput.value = value;
                 this._apply((el) => applyFn(el, value));
                 this._syncSwatchActive(container, value);
+                this._commit();
             });
         });
     }
@@ -122,6 +164,7 @@ export class PropertiesPanel {
             button.addEventListener("click", () => {
                 this._apply((el) => applyFn(el, button.dataset.value));
                 this._syncSegmentedActive(group, button.dataset.value);
+                this._commit();
             });
         });
     }
@@ -132,10 +175,20 @@ export class PropertiesPanel {
         });
     }
 
+    _syncToggleButtons() {
+        if (!this._current) return;
+        this.lockBtn.classList.toggle("segmented__active", this._current.locked);
+        this.visibleBtn.classList.toggle("segmented__active", !this._current.visible);
+    }
+
     _apply(mutate) {
         if (!this._current) return;
         mutate(this._current);
         this.renderer.markDirty();
+    }
+
+    _commit() {
+        this.historyManager?.pushSnapshot();
     }
 
     _onSelectionChange(element) {
@@ -156,6 +209,7 @@ export class PropertiesPanel {
         this._syncSwatchActive(document.querySelector('[data-swatches="fill"]'), element.style.fill);
         this._syncSegmentedActive(this.strokeWidthGroup, String(element.style.strokeWidth));
         this._syncSegmentedActive(this.strokeStyleGroup, element.style.strokeStyle);
+        this._syncToggleButtons();
     }
 
     _toggleTypeSpecificRows(element) {
@@ -173,6 +227,7 @@ export class PropertiesPanel {
         const zIndexes = this.scene.objects.map((o) => o.zIndex);
         this._current.zIndex = direction > 0 ? Math.max(...zIndexes) + 1 : Math.min(...zIndexes) - 1;
         this.renderer.markDirty();
+        this._commit();
     }
 
     /** Troca de posição com o vizinho imediato (avançar/recuar uma camada). */
@@ -186,5 +241,6 @@ export class PropertiesPanel {
         const other = sorted[swapIndex];
         [this._current.zIndex, other.zIndex] = [other.zIndex, this._current.zIndex];
         this.renderer.markDirty();
+        this._commit();
     }
 }

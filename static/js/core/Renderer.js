@@ -1,6 +1,6 @@
 import { mod } from "../utils/geometry.js";
 
-const BASE_GRID_SPACING = 24;
+export const BASE_GRID_SPACING = 24;
 const MIN_SCREEN_SPACING = 8;
 const MAX_SCREEN_SPACING = 64;
 

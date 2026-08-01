@@ -1,10 +1,9 @@
 /**
  * Bootstrap da aplicação.
  *
- * Etapa 9 — biblioteca de componentes: painel flutuante com os
- * estênceis de Redes/Fluxograma/Formas (ícones vetoriais originais,
- * não copiados de nenhum produto específico), com busca, favoritos e
- * colocação no canvas por clique ou drag-and-drop.
+ * Etapa 10 — refinamentos: undo/redo (HistoryManager), minimapa
+ * funcional, "ajustar à tela" calculando o bounding box de verdade,
+ * snap em grade ao arrastar, e bloquear/ocultar objeto.
  */
 
 import { EventBus } from "./core/EventBus.js";
@@ -14,14 +13,18 @@ import { Renderer } from "./core/Renderer.js";
 import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
+import { HistoryManager } from "./managers/HistoryManager.js";
 import { duplicateSelected, deleteSelected } from "./managers/objectActions.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
+import { Minimap } from "./ui/Minimap.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
+import { computeSceneBounds } from "./io/svgBuilder.js";
+import { clamp } from "./utils/geometry.js";
 import { SelectTool } from "./tools/SelectTool.js";
 import { PanTool } from "./tools/PanTool.js";
 import { RectangleTool } from "./tools/RectangleTool.js";
@@ -123,6 +126,7 @@ function initCanvasEngine() {
     const camera = new Camera();
     const renderer = new Renderer({ container: canvasArea, staticCanvas, interactiveCanvas, camera, scene });
     const selectionManager = new SelectionManager({ scene, eventBus });
+    const historyManager = new HistoryManager({ scene, renderer, selectionManager, eventBus });
 
     const toolManager = new ToolManager({
         canvasArea,
@@ -131,6 +135,7 @@ function initCanvasEngine() {
         eventBus,
         renderer,
         selectionManager,
+        historyManager,
         tools: [
             new SelectTool(),
             new PanTool(),
@@ -150,10 +155,23 @@ function initCanvasEngine() {
     const input = new InputController({ element: canvasArea, camera, renderer, eventBus, toolManager });
     const saveLoad = new SaveLoad({ scene, camera, renderer, eventBus });
 
-    return { canvasArea, eventBus, scene, camera, renderer, toolManager, selectionManager, input, saveLoad };
+    return {
+        canvasArea,
+        eventBus,
+        scene,
+        camera,
+        renderer,
+        toolManager,
+        selectionManager,
+        historyManager,
+        input,
+        saveLoad,
+    };
 }
 
-function initZoomControls({ camera, renderer, eventBus }) {
+const ZOOM_FIT_PADDING = 60;
+
+function initZoomControls({ scene, camera, renderer, eventBus }) {
     const zoomLevelEl = document.querySelector("[data-zoom-level]");
 
     const updateZoomLabel = () => {
@@ -173,8 +191,19 @@ function initZoomControls({ camera, renderer, eventBus }) {
     });
 
     document.querySelector('[data-action="zoom-fit"]').addEventListener("click", () => {
-        // Ajuste real à bounding box dos objetos fica para um refinamento futuro; por ora volta ao padrão.
-        camera.reset();
+        if (scene.objects.length === 0) {
+            camera.reset();
+        } else {
+            const bounds = computeSceneBounds(scene);
+            const scaleX = (renderer.width - ZOOM_FIT_PADDING * 2) / Math.max(bounds.width, 1);
+            const scaleY = (renderer.height - ZOOM_FIT_PADDING * 2) / Math.max(bounds.height, 1);
+            camera.zoom = clamp(Math.min(scaleX, scaleY), camera.minZoom, camera.maxZoom);
+
+            const centerX = bounds.x + bounds.width / 2;
+            const centerY = bounds.y + bounds.height / 2;
+            camera.offsetX = renderer.width / 2 - centerX * camera.zoom;
+            camera.offsetY = renderer.height / 2 - centerY * camera.zoom;
+        }
         renderer.markDirty();
         eventBus.emit("camera:change");
     });
@@ -258,7 +287,7 @@ function createLineOrConnector({ start, end, startObjectId, endObjectId, routeTy
 }
 
 /** Consome os eventos emitidos pelas ferramentas e materializa Elements reais na Scene. */
-function initElementCreation({ scene, eventBus, renderer, selectionManager, toolManager }) {
+function initElementCreation({ scene, eventBus, renderer, selectionManager, toolManager, historyManager }) {
     const focusSelectTool = (element) => {
         selectionManager.select(element);
         toolManager.setActiveTool("select");
@@ -268,6 +297,7 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
         scene.addObject(element);
         renderer.markDirty();
         focusSelectTool(element);
+        historyManager?.pushSnapshot();
     };
 
     eventBus.on("tool:shape-drawn", ({ type, start, end, startObjectId, endObjectId }) => {
@@ -320,6 +350,7 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
         scene.removeObject(hit);
         selectionManager.remove(hit);
         renderer.markDirty();
+        historyManager?.pushSnapshot();
     });
 }
 
@@ -342,6 +373,33 @@ function initObjectShortcuts(engine) {
             event.preventDefault();
             duplicateSelected(engine);
         }
+    });
+}
+
+/** Liga os botões Desfazer/Refazer da topbar (inertes desde a Etapa 2) e Ctrl+Z / Ctrl+Y (ou Ctrl+Shift+Z). */
+function initHistoryControls({ eventBus, historyManager }) {
+    const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+    const undoBtn = document.querySelector('[data-action="undo"]');
+    const redoBtn = document.querySelector('[data-action="redo"]');
+
+    undoBtn.addEventListener("click", () => historyManager.undo());
+    redoBtn.addEventListener("click", () => historyManager.redo());
+
+    const applyState = ({ canUndo, canRedo }) => {
+        undoBtn.disabled = !canUndo;
+        redoBtn.disabled = !canRedo;
+    };
+    eventBus.on("history:change", applyState);
+    applyState(historyManager.getState());
+
+    window.addEventListener("keydown", (event) => {
+        if (EDITABLE_TAGS.has(event.target.tagName)) return;
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (event.key.toLowerCase() !== "z" && event.key.toLowerCase() !== "y") return;
+
+        event.preventDefault();
+        const isRedo = event.key.toLowerCase() === "y" || (event.key.toLowerCase() === "z" && event.shiftKey);
+        isRedo ? historyManager.redo() : historyManager.undo();
     });
 }
 
@@ -380,9 +438,11 @@ function init() {
     initElementCreation(engine);
     initObjectShortcuts(engine);
     initFileShortcuts(engine);
+    initHistoryControls(engine);
     new PropertiesPanel(engine);
     new FileMenu(engine);
     new LibraryPanel(engine);
+    new Minimap(engine);
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;
