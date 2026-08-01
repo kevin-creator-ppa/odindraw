@@ -57,6 +57,6 @@ export class Freehand extends Element {
 
     toSVG() {
         const pointsAttr = this.points.map((p) => `${p.x},${p.y}`).join(" ");
-        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}" />`;
+        return `<polyline points="${pointsAttr}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} stroke-linecap="round" stroke-linejoin="round" />`;
     }
 }

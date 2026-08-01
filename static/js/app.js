@@ -1,10 +1,10 @@
 /**
  * Bootstrap da aplicação.
  *
- * Etapa 6 — conectores: as ferramentas Linha/Seta/Linha ortogonal agora
- * "grudam" quando o início ou fim do arraste cai sobre um objeto,
- * criando um Connector real (em vez de uma linha solta) que recalcula
- * sua posição sozinho a cada frame, seguindo os objetos ligados.
+ * Etapa 8 — exportação: PNG e SVG são gerados 100% no cliente (canvas
+ * offscreen / string SVG); PDF é gerado no backend a partir do mesmo
+ * SVG (svglib + reportlab), mantendo o frontend livre de bibliotecas
+ * pesadas de geração de PDF.
  */
 
 import { EventBus } from "./core/EventBus.js";
@@ -17,6 +17,9 @@ import { SelectionManager } from "./managers/SelectionManager.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { SaveLoad } from "./io/SaveLoad.js";
+import { exportPng } from "./io/ExportPng.js";
+import { exportSvg } from "./io/ExportSvg.js";
+import { exportPdf } from "./io/ExportPdf.js";
 import { SelectTool } from "./tools/SelectTool.js";
 import { PanTool } from "./tools/PanTool.js";
 import { RectangleTool } from "./tools/RectangleTool.js";
@@ -67,6 +70,37 @@ function initExportMenu() {
     toggle.addEventListener("click", (event) => {
         event.stopPropagation();
         dropdown.classList.toggle("dropdown--open");
+    });
+}
+
+/** Liga os 3 itens do dropdown Exportar; avisa se não há nada desenhado ainda. */
+function initExportActions({ scene }) {
+    const guardEmptyScene = () => {
+        if (scene.objects.length === 0) {
+            window.alert("Não há nada para exportar ainda.");
+            return true;
+        }
+        return false;
+    };
+
+    document.querySelector('[data-action="export-png"]').addEventListener("click", () => {
+        if (guardEmptyScene()) return;
+        exportPng(scene);
+    });
+
+    document.querySelector('[data-action="export-svg"]').addEventListener("click", () => {
+        if (guardEmptyScene()) return;
+        exportSvg(scene);
+    });
+
+    document.querySelector('[data-action="export-pdf"]').addEventListener("click", async () => {
+        if (guardEmptyScene()) return;
+        try {
+            await exportPdf(scene);
+        } catch (error) {
+            window.alert("Não foi possível exportar o PDF.");
+            console.error(error);
+        }
     });
 }
 
@@ -345,6 +379,7 @@ function init() {
 
     initTheme(() => engine.renderer.markDirty());
     initExportMenu();
+    initExportActions(engine);
     initDropdownAutoClose();
     initZoomControls(engine);
     initGridToggle(engine.renderer);

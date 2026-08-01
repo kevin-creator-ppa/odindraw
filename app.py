@@ -23,9 +23,11 @@ def create_app(config_name=None):
 
     from routes.main import main_bp
     from routes.diagrams import diagrams_bp
+    from routes.export import export_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(diagrams_bp)
+    app.register_blueprint(export_bp)
 
     return app
 

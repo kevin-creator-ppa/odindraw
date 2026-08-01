@@ -26,7 +26,7 @@ export class Arrow extends Line {
         const size = 12;
         const p1 = { x: this.x2 - size * Math.cos(angle - Math.PI / 6), y: this.y2 - size * Math.sin(angle - Math.PI / 6) };
         const p2 = { x: this.x2 - size * Math.cos(angle + Math.PI / 6), y: this.y2 - size * Math.sin(angle + Math.PI / 6) };
-        return `<g stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
+        return `<g stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
             <line x1="${this.x1}" y1="${this.y1}" x2="${this.x2}" y2="${this.y2}" />
             <line x1="${this.x2}" y1="${this.y2}" x2="${p1.x}" y2="${p1.y}" />
             <line x1="${this.x2}" y1="${this.y2}" x2="${p2.x}" y2="${p2.y}" />

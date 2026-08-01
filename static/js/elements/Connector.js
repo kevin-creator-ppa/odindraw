@@ -17,13 +17,21 @@ function edgeAnchorPoint(bounds, towardPoint) {
     return { x: cx + dx * scale, y: cy + dy * scale };
 }
 
-function drawArrowhead(ctx, from, to) {
+function arrowheadWings(from, to) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    return [
+        { x: to.x - ARROW_SIZE * Math.cos(angle - Math.PI / 6), y: to.y - ARROW_SIZE * Math.sin(angle - Math.PI / 6) },
+        { x: to.x - ARROW_SIZE * Math.cos(angle + Math.PI / 6), y: to.y - ARROW_SIZE * Math.sin(angle + Math.PI / 6) },
+    ];
+}
+
+function drawArrowhead(ctx, from, to) {
+    const [wing1, wing2] = arrowheadWings(from, to);
     ctx.beginPath();
     ctx.moveTo(to.x, to.y);
-    ctx.lineTo(to.x - ARROW_SIZE * Math.cos(angle - Math.PI / 6), to.y - ARROW_SIZE * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(wing1.x, wing1.y);
     ctx.moveTo(to.x, to.y);
-    ctx.lineTo(to.x - ARROW_SIZE * Math.cos(angle + Math.PI / 6), to.y - ARROW_SIZE * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(wing2.x, wing2.y);
     ctx.stroke();
 }
 
@@ -117,9 +125,24 @@ export class Connector extends Element {
         ctx.save();
         this.applyStyle(ctx);
         this._drawRoute(ctx, a, b);
-        if (this.startArrow) drawArrowhead(ctx, b, a);
-        if (this.endArrow) drawArrowhead(ctx, a, b);
+        if (this.startArrow) drawArrowhead(ctx, this._nearPoint(a, b, "start"), a);
+        if (this.endArrow) drawArrowhead(ctx, this._nearPoint(a, b, "end"), b);
         ctx.restore();
+    }
+
+    /**
+     * Ponto adjacente ao início/fim ao longo da rota (não o outro extremo),
+     * usado só para calcular o ângulo da seta — em rotas ortogonais/curvas
+     * a direção real no bico é a do último trecho, não a linha reta entre
+     * os dois extremos.
+     */
+    _nearPoint(a, b, which) {
+        if (this.routeType === "orthogonal") return { x: b.x, y: a.y };
+        if (this.routeType === "curved") {
+            const midX = (a.x + b.x) / 2;
+            return { x: midX, y: which === "start" ? a.y : b.y };
+        }
+        return which === "start" ? b : a;
     }
 
     _drawRoute(ctx, a, b) {
@@ -161,6 +184,22 @@ export class Connector extends Element {
                 : this.routeType === "curved"
                   ? `M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}`
                   : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
-        return `<path d="${pathD}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}" />`;
+
+        const arrowLines = [];
+        if (this.startArrow) arrowLines.push(...this._arrowheadSvgLines(this._nearPoint(start, end, "start"), start));
+        if (this.endArrow) arrowLines.push(...this._arrowheadSvgLines(this._nearPoint(start, end, "end"), end));
+
+        return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
+            <path d="${pathD}"${this.svgDashArray()} />
+            ${arrowLines.join("\n            ")}
+        </g>`;
+    }
+
+    _arrowheadSvgLines(from, to) {
+        const [wing1, wing2] = arrowheadWings(from, to);
+        return [
+            `<line x1="${to.x}" y1="${to.y}" x2="${wing1.x}" y2="${wing1.y}" />`,
+            `<line x1="${to.x}" y1="${to.y}" x2="${wing2.x}" y2="${wing2.y}" />`,
+        ];
     }
 }

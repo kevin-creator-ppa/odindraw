@@ -68,6 +68,13 @@ export class Element {
         );
     }
 
+    /** Atributo SVG `stroke-dasharray` correspondente ao strokeStyle — usado pelo toSVG() das subclasses. */
+    svgDashArray() {
+        if (this.style.strokeStyle === "dashed") return ' stroke-dasharray="8,5"';
+        if (this.style.strokeStyle === "dotted") return ' stroke-dasharray="2,4"';
+        return "";
+    }
+
     /** Aplica a transformação de tela (posição + rotação) e delega o desenho local à subclasse. */
     render(ctx, camera) {
         const topLeft = camera.worldToScreen(this.x, this.y);

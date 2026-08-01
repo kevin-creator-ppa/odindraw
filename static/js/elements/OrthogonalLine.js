@@ -23,6 +23,6 @@ export class OrthogonalLine extends Line {
     }
 
     toSVG() {
-        return `<polyline points="${this.x1},${this.y1} ${this.x2},${this.y1} ${this.x2},${this.y2}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}" />`;
+        return `<polyline points="${this.x1},${this.y1} ${this.x2},${this.y1} ${this.x2},${this.y2}" fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()} />`;
     }
 }
