@@ -1,4 +1,5 @@
 import { mod } from "../utils/geometry.js";
+import { animationState } from "../elements/animationState.js";
 
 export const BASE_GRID_SPACING = 24;
 const MIN_SCREEN_SPACING = 8;
@@ -72,7 +73,12 @@ export class Renderer {
     }
 
     _tick() {
-        if (this._dirty) {
+        const hasAnimatedStroke = this.scene.objects.some((el) => el.style?.strokeStyle === "animated");
+        if (hasAnimatedStroke) {
+            animationState.phase = (animationState.phase + 0.4) % 13;
+        }
+
+        if (this._dirty || hasAnimatedStroke) {
             this._renderStatic();
             this._dirty = false;
         }

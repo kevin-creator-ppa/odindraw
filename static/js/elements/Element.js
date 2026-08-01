@@ -1,3 +1,5 @@
+import { animationState } from "./animationState.js";
+
 let idCounter = 0;
 
 function nextId(prefix) {
@@ -63,14 +65,25 @@ export class Element {
         ctx.fillStyle = this.style.fill;
         ctx.strokeStyle = this.style.stroke;
         ctx.lineWidth = this.style.strokeWidth;
-        ctx.setLineDash(
-            this.style.strokeStyle === "dashed" ? [8, 5] : this.style.strokeStyle === "dotted" ? [2, 4] : []
-        );
+
+        if (this.style.strokeStyle === "dashed") {
+            ctx.setLineDash([8, 5]);
+            ctx.lineDashOffset = 0;
+        } else if (this.style.strokeStyle === "dotted") {
+            ctx.setLineDash([2, 4]);
+            ctx.lineDashOffset = 0;
+        } else if (this.style.strokeStyle === "animated") {
+            ctx.setLineDash([8, 5]);
+            ctx.lineDashOffset = -animationState.phase;
+        } else {
+            ctx.setLineDash([]);
+            ctx.lineDashOffset = 0;
+        }
     }
 
-    /** Atributo SVG `stroke-dasharray` correspondente ao strokeStyle — usado pelo toSVG() das subclasses. */
+    /** Atributo SVG `stroke-dasharray` correspondente ao strokeStyle — usado pelo toSVG() das subclasses (animação não é exportada, vira tracejado estático). */
     svgDashArray() {
-        if (this.style.strokeStyle === "dashed") return ' stroke-dasharray="8,5"';
+        if (this.style.strokeStyle === "dashed" || this.style.strokeStyle === "animated") return ' stroke-dasharray="8,5"';
         if (this.style.strokeStyle === "dotted") return ' stroke-dasharray="2,4"';
         return "";
     }

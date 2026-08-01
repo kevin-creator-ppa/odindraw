@@ -19,12 +19,14 @@ import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { Minimap } from "./ui/Minimap.js";
+import { TextEditor } from "./ui/TextEditor.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
 import { computeSceneBounds } from "./io/svgBuilder.js";
 import { clamp } from "./utils/geometry.js";
+import { applyIcons } from "./ui/icons.js";
 import { SelectTool } from "./tools/SelectTool.js";
 import { PanTool } from "./tools/PanTool.js";
 import { RectangleTool } from "./tools/RectangleTool.js";
@@ -54,27 +56,47 @@ const DEFAULT_SHAPE_HEIGHT = 80;
 
 function initTheme(onChange) {
     const root = document.documentElement;
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored) {
-        root.setAttribute("data-theme", stored);
-    }
+    const lightBtn = document.querySelector('[data-action="set-theme-light"]');
+    const darkBtn = document.querySelector('[data-action="set-theme-dark"]');
 
-    document.querySelector('[data-action="toggle-theme"]').addEventListener("click", () => {
+    const syncButtons = () => {
         const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-        const next = current === "dark" ? "light" : "dark";
-        root.setAttribute("data-theme", next);
-        localStorage.setItem(THEME_STORAGE_KEY, next);
+        lightBtn.classList.toggle("segmented__active", current === "light");
+        darkBtn.classList.toggle("segmented__active", current === "dark");
+    };
+
+    const setTheme = (theme) => {
+        root.setAttribute("data-theme", theme);
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+        syncButtons();
         onChange?.();
-    });
+    };
+
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored) root.setAttribute("data-theme", stored);
+    syncButtons();
+
+    lightBtn.addEventListener("click", () => setTheme("light"));
+    darkBtn.addEventListener("click", () => setTheme("dark"));
 }
 
-function initExportMenu() {
-    const dropdown = document.querySelector('[data-dropdown="export"]');
-    const toggle = dropdown.querySelector('[data-action="export-menu"]');
+/** Menu hambúrguer principal (Novo/Abrir/Salvar/Exportar/Tema) — mesmo padrão de toggle dos outros dropdowns. */
+function initMainMenu() {
+    const dropdown = document.querySelector('[data-dropdown="main-menu"]');
+    const toggle = document.querySelector('[data-action="main-menu"]');
 
     toggle.addEventListener("click", (event) => {
         event.stopPropagation();
         dropdown.classList.toggle("dropdown--open");
+    });
+}
+
+/** Recolhe/expande o painel de propriedades (sidebar direita). */
+function initPropertiesPanelToggle() {
+    const button = document.querySelector('[data-action="toggle-properties-panel"]');
+    button.addEventListener("click", () => {
+        const collapsed = document.querySelector(".app").classList.toggle("app--properties-collapsed");
+        button.setAttribute("data-active", String(!collapsed));
     });
 }
 
@@ -154,6 +176,7 @@ function initCanvasEngine() {
 
     const input = new InputController({ element: canvasArea, camera, renderer, eventBus, toolManager });
     const saveLoad = new SaveLoad({ scene, camera, renderer, eventBus });
+    const textEditor = new TextEditor({ canvasArea, camera, renderer, eventBus, historyManager, scene, selectionManager });
 
     return {
         canvasArea,
@@ -166,6 +189,7 @@ function initCanvasEngine() {
         historyManager,
         input,
         saveLoad,
+        textEditor,
     };
 }
 
@@ -287,7 +311,7 @@ function createLineOrConnector({ start, end, startObjectId, endObjectId, routeTy
 }
 
 /** Consome os eventos emitidos pelas ferramentas e materializa Elements reais na Scene. */
-function initElementCreation({ scene, eventBus, renderer, selectionManager, toolManager, historyManager }) {
+function initElementCreation({ scene, eventBus, renderer, selectionManager, toolManager, historyManager, textEditor }) {
     const focusSelectTool = (element) => {
         selectionManager.select(element);
         toolManager.setActiveTool("select");
@@ -336,12 +360,23 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
     });
 
     eventBus.on("tool:text-placed", ({ point }) => {
-        addAndSelect(new Text({ x: point.x, y: point.y }));
+        const element = new Text({ x: point.x, y: point.y });
+        scene.addObject(element);
+        renderer.markDirty();
+        focusSelectTool(element);
+        textEditor.open(element, { isNew: true });
     });
 
     eventBus.on("tool:freehand-drawn", ({ points }) => {
         if (points.length < 2) return;
         addAndSelect(new Freehand({ points }));
+    });
+
+    // Arraste a partir de uma alça do item selecionado (SelectTool) — ver "connector-drag" no SelectTool.
+    eventBus.on("tool:connector-drawn", ({ startObjectId, startPoint, endObjectId, endPoint }) => {
+        addAndSelect(
+            new Connector({ startObjectId, endObjectId, startPoint, endPoint, routeType: "straight", endArrow: true })
+        );
     });
 
     eventBus.on("tool:erase-drag", ({ point }) => {
@@ -351,6 +386,19 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
         selectionManager.remove(hit);
         renderer.markDirty();
         historyManager?.pushSnapshot();
+    });
+}
+
+/** Duplo clique num Text existente abre o editor inline (a criação via ferramenta já abre sozinha). */
+function initTextEditing({ canvasArea, camera, scene, toolManager, textEditor }) {
+    canvasArea.addEventListener("dblclick", (event) => {
+        const rect = canvasArea.getBoundingClientRect();
+        const worldPoint = camera.screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
+        const hit = scene.getObjectAtPoint(worldPoint);
+        if (!hit || hit.type !== "text" || hit.locked) return;
+
+        toolManager.setActiveTool("select");
+        textEditor.open(hit, { isNew: false });
     });
 }
 
@@ -426,16 +474,20 @@ function initFileShortcuts({ eventBus }) {
 }
 
 function init() {
+    applyIcons();
+
     const engine = initCanvasEngine();
 
     initTheme(() => engine.renderer.markDirty());
-    initExportMenu();
+    initMainMenu();
     initExportActions(engine);
     initDropdownAutoClose();
+    initPropertiesPanelToggle();
     initZoomControls(engine);
     initGridToggle(engine.renderer);
     initToolSelection(engine.toolManager);
     initElementCreation(engine);
+    initTextEditing(engine);
     initObjectShortcuts(engine);
     initFileShortcuts(engine);
     initHistoryControls(engine);

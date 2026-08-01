@@ -139,6 +139,7 @@ export class LibraryPanel {
         favButton.type = "button";
         favButton.title = "Favoritar";
         favButton.textContent = this.favorites.has(item.id) ? "★" : "☆";
+        favButton.dataset.favorited = String(this.favorites.has(item.id));
         favButton.addEventListener("click", (event) => {
             event.stopPropagation();
             this._toggleFavorite(item.id);

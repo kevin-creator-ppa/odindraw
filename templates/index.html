@@ -12,69 +12,97 @@
         <!-- Top bar -->
         <header class="topbar">
             <div class="topbar__group topbar__group--brand">
+                <div class="dropdown" data-dropdown="main-menu">
+                    <button class="btn btn--icon" data-action="main-menu" data-icon="menu" title="Menu"></button>
+                    <div class="dropdown__menu dropdown__menu--main">
+                        <button class="menu-item" data-action="new" title="Novo (Ctrl+N)">
+                            <span class="menu-item__icon" data-icon="file-plus"></span>
+                            <span class="menu-item__label">Novo</span>
+                            <span class="menu-item__hint">Ctrl+N</span>
+                        </button>
+                        <div class="dropdown" data-dropdown="open-diagram">
+                            <button class="menu-item" data-action="open" title="Abrir (Ctrl+O)">
+                                <span class="menu-item__icon" data-icon="folder-open"></span>
+                                <span class="menu-item__label">Abrir</span>
+                                <span class="menu-item__hint">Ctrl+O</span>
+                            </button>
+                            <div class="dropdown__menu dropdown__menu--nested" data-open-diagram-menu>
+                                <p class="dropdown__empty">Nenhum diagrama salvo</p>
+                            </div>
+                        </div>
+                        <button class="menu-item" data-action="save" title="Salvar (Ctrl+S)">
+                            <span class="menu-item__icon" data-icon="save"></span>
+                            <span class="menu-item__label">Salvar</span>
+                            <span class="menu-item__hint">Ctrl+S</span>
+                        </button>
+                        <span class="menu-divider"></span>
+                        <button class="menu-item" data-action="export-png" title="Exportar PNG">
+                            <span class="menu-item__icon" data-icon="image"></span>
+                            <span class="menu-item__label">Exportar PNG</span>
+                        </button>
+                        <button class="menu-item" data-action="export-svg" title="Exportar SVG">
+                            <span class="menu-item__icon" data-icon="image"></span>
+                            <span class="menu-item__label">Exportar SVG</span>
+                        </button>
+                        <button class="menu-item" data-action="export-pdf" title="Exportar PDF">
+                            <span class="menu-item__icon" data-icon="file-text"></span>
+                            <span class="menu-item__label">Exportar PDF</span>
+                        </button>
+                        <span class="menu-divider"></span>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Tema</span>
+                            <div class="segmented segmented--compact">
+                                <button data-action="set-theme-light" data-icon="sun" title="Claro"></button>
+                                <button data-action="set-theme-dark" data-icon="moon" title="Escuro"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <span class="brand">OdinDraw</span>
                 <span class="diagram-name" data-diagram-name>Sem título</span>
             </div>
 
             <div class="topbar__group">
-                <button class="btn" data-action="new" title="Novo (Ctrl+N)">Novo</button>
-                <div class="dropdown" data-dropdown="open-diagram">
-                    <button class="btn" data-action="open" title="Abrir (Ctrl+O)">Abrir</button>
-                    <div class="dropdown__menu" data-open-diagram-menu>
-                        <p class="dropdown__empty">Nenhum diagrama salvo</p>
-                    </div>
-                </div>
-                <button class="btn" data-action="save" title="Salvar (Ctrl+S)">Salvar</button>
-                <span class="divider"></span>
-                <div class="dropdown" data-dropdown="export">
-                    <button class="btn" data-action="export-menu" title="Exportar">Exportar</button>
-                    <div class="dropdown__menu">
-                        <button class="dropdown__item" data-action="export-png">PNG</button>
-                        <button class="dropdown__item" data-action="export-svg">SVG</button>
-                        <button class="dropdown__item" data-action="export-pdf">PDF</button>
-                    </div>
-                </div>
-                <span class="divider"></span>
-                <button class="btn btn--icon" data-action="undo" title="Desfazer (Ctrl+Z)">&#8630;</button>
-                <button class="btn btn--icon" data-action="redo" title="Refazer (Ctrl+Y)">&#8631;</button>
+                <button class="btn btn--icon" data-action="undo" data-icon="undo" title="Desfazer (Ctrl+Z)"></button>
+                <button class="btn btn--icon" data-action="redo" data-icon="redo" title="Refazer (Ctrl+Y)"></button>
             </div>
 
             <div class="topbar__group topbar__group--right">
-                <button class="btn btn--icon" data-action="zoom-out" title="Zoom -">&minus;</button>
+                <button class="btn btn--icon" data-action="zoom-out" data-icon="zoom-out" title="Zoom -"></button>
                 <span class="zoom-level" data-zoom-level>100%</span>
-                <button class="btn btn--icon" data-action="zoom-in" title="Zoom +">+</button>
-                <button class="btn" data-action="zoom-fit" title="Ajustar à tela">Ajustar</button>
+                <button class="btn btn--icon" data-action="zoom-in" data-icon="zoom-in" title="Zoom +"></button>
+                <button class="btn btn--icon" data-action="zoom-fit" data-icon="zoom-fit" title="Ajustar à tela"></button>
                 <span class="divider"></span>
-                <button class="btn btn--icon" data-action="toggle-grid" data-active="true" title="Mostrar/ocultar grade">&#9638;</button>
-                <button class="btn btn--icon" data-action="toggle-theme" title="Alternar tema claro/escuro">&#9680;</button>
+                <button class="btn btn--icon" data-action="toggle-grid" data-icon="grid" data-active="true" title="Mostrar/ocultar grade"></button>
+                <button class="btn btn--icon" data-action="toggle-properties-panel" data-icon="panel-right" data-active="true" title="Mostrar/ocultar propriedades"></button>
             </div>
         </header>
 
         <!-- Left sidebar: tools -->
         <aside class="sidebar sidebar--left" aria-label="Ferramentas">
             <div class="tool-group">
-                <button class="tool tool--active" data-tool="select" title="Seleção (V)">&#9650;</button>
-                <button class="tool" data-tool="pan" title="Mão / Pan (H)">&#9995;</button>
+                <button class="tool tool--active" data-tool="select" data-icon="select" title="Seleção (V)"></button>
+                <button class="tool" data-tool="pan" data-icon="pan" title="Mão / Pan (H)"></button>
             </div>
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
-                <button class="tool" data-tool="rectangle" title="Retângulo (R)">&#9633;</button>
-                <button class="tool" data-tool="square" title="Quadrado">&#9723;</button>
-                <button class="tool" data-tool="circle" title="Círculo">&#9675;</button>
-                <button class="tool" data-tool="ellipse" title="Elipse (O)">&#11052;</button>
-                <button class="tool" data-tool="line" title="Linha (L)">&#9585;</button>
-                <button class="tool" data-tool="arrow" title="Seta (A)">&#8594;</button>
-                <button class="tool" data-tool="orthogonal-line" title="Linha ortogonal">&#8735;</button>
+                <button class="tool" data-tool="rectangle" data-icon="rectangle" title="Retângulo (R)"></button>
+                <button class="tool" data-tool="square" data-icon="square" title="Quadrado"></button>
+                <button class="tool" data-tool="circle" data-icon="circle" title="Círculo"></button>
+                <button class="tool" data-tool="ellipse" data-icon="ellipse" title="Elipse (O)"></button>
+                <button class="tool" data-tool="line" data-icon="line" title="Linha (L)"></button>
+                <button class="tool" data-tool="arrow" data-icon="arrow" title="Seta (A)"></button>
+                <button class="tool" data-tool="orthogonal-line" data-icon="orthogonal-line" title="Linha ortogonal"></button>
             </div>
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
-                <button class="tool" data-tool="text" title="Texto (T)">A</button>
-                <button class="tool" data-tool="freehand" title="Desenho livre (P)">&#9998;</button>
-                <button class="tool" data-tool="eraser" title="Borracha (E)">&#9003;</button>
+                <button class="tool" data-tool="text" data-icon="text" title="Texto (T)"></button>
+                <button class="tool" data-tool="freehand" data-icon="freehand" title="Desenho livre (P)"></button>
+                <button class="tool" data-tool="eraser" data-icon="eraser" title="Borracha (E)"></button>
             </div>
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
-                <button class="tool" data-action="toggle-library" title="Biblioteca de componentes">&#9638;</button>
+                <button class="tool" data-action="toggle-library" data-icon="library" title="Biblioteca de componentes"></button>
             </div>
         </aside>
 
@@ -82,7 +110,7 @@
         <aside class="library-panel" data-library-panel hidden>
             <div class="library-panel__header">
                 <input type="search" class="library-panel__search" placeholder="Buscar componente…" data-library-search>
-                <button class="btn btn--icon" data-action="close-library" title="Fechar">&times;</button>
+                <button class="btn btn--icon" data-action="close-library" data-icon="close" title="Fechar"></button>
             </div>
             <div class="library-panel__body" data-library-body>
                 <p class="dropdown__empty">Carregando…</p>
@@ -94,13 +122,13 @@
             <canvas id="static-canvas" class="canvas-layer"></canvas>
             <canvas id="interactive-canvas" class="canvas-layer"></canvas>
 
-            <div class="minimap" data-minimap title="Minimapa (Etapa 10)">
+            <div class="minimap" data-minimap title="Minimapa">
                 <span class="minimap__label">Minimapa</span>
             </div>
         </main>
 
         <!-- Right sidebar: properties -->
-        <aside class="sidebar sidebar--right" aria-label="Propriedades">
+        <aside class="sidebar sidebar--right" aria-label="Propriedades" data-properties-panel>
             <h2 class="sidebar__title">Propriedades</h2>
 
             <div class="property">
@@ -139,6 +167,7 @@
                     <button data-value="solid" title="Sólida">&#8213;&#8213;&#8213;</button>
                     <button data-value="dashed" title="Tracejada">&#8211;&nbsp;&#8211;&nbsp;&#8211;</button>
                     <button data-value="dotted" title="Pontilhada">&middot;&middot;&middot;&middot;</button>
+                    <button data-value="animated" data-icon="dash-motion" title="Animada"></button>
                 </div>
             </div>
             <div class="property">
@@ -148,7 +177,7 @@
 
             <span class="divider divider--horizontal"></span>
 
-            <div class="property">
+            <div class="property" data-text-only hidden>
                 <label>Fonte</label>
                 <select data-prop="font-family">
                     <option>Inter</option>
@@ -157,16 +186,24 @@
                     <option>Monospace</option>
                 </select>
             </div>
-            <div class="property">
+            <div class="property" data-text-only hidden>
                 <label>Tamanho da fonte</label>
                 <input type="number" min="8" max="96" value="14" data-prop="font-size">
             </div>
-            <div class="property">
+            <div class="property" data-text-only hidden>
+                <label>Estilo do texto</label>
+                <div class="segmented">
+                    <button data-prop="bold" class="text-style-btn text-style-btn--bold" title="Negrito">B</button>
+                    <button data-prop="italic" class="text-style-btn text-style-btn--italic" title="Itálico">I</button>
+                    <button data-prop="underline" class="text-style-btn text-style-btn--underline" title="Sublinhado">S</button>
+                </div>
+            </div>
+            <div class="property" data-text-only hidden>
                 <label>Alinhamento</label>
                 <div class="segmented">
-                    <button data-prop="align" data-value="left">&#8676;</button>
-                    <button data-prop="align" data-value="center">&#8596;</button>
-                    <button data-prop="align" data-value="right">&#8677;</button>
+                    <button data-prop="align" data-value="left" title="Esquerda">&#8676;</button>
+                    <button data-prop="align" data-value="center" title="Centro">&#8596;</button>
+                    <button data-prop="align" data-value="right" title="Direita">&#8677;</button>
                 </div>
             </div>
             <div class="property" data-hide-for-connector>
@@ -187,19 +224,19 @@
             <div class="property">
                 <label>Camada</label>
                 <div class="segmented">
-                    <button data-action="send-back" title="Enviar para trás">&#10515;</button>
-                    <button data-action="send-backward" title="Recuar uma camada">&#8595;</button>
-                    <button data-action="bring-forward" title="Avançar uma camada">&#8593;</button>
-                    <button data-action="bring-front" title="Trazer para frente">&#10514;</button>
+                    <button data-action="send-back" data-icon="layer-back" title="Enviar para trás"></button>
+                    <button data-action="send-backward" data-icon="layer-backward" title="Recuar uma camada"></button>
+                    <button data-action="bring-forward" data-icon="layer-forward" title="Avançar uma camada"></button>
+                    <button data-action="bring-front" data-icon="layer-front" title="Trazer para frente"></button>
                 </div>
             </div>
             <div class="property">
                 <label>Ações</label>
                 <div class="segmented">
-                    <button data-action="duplicate-selected" title="Duplicar (Ctrl+D)">&#10697;</button>
-                    <button data-action="delete-selected" title="Excluir (Del)">&#10005;</button>
-                    <button data-action="toggle-lock" title="Bloquear/desbloquear">&#128274;</button>
-                    <button data-action="toggle-visible" title="Ocultar/exibir">&#128065;</button>
+                    <button data-action="duplicate-selected" data-icon="duplicate" title="Duplicar (Ctrl+D)"></button>
+                    <button data-action="delete-selected" data-icon="trash" title="Excluir (Del)"></button>
+                    <button data-action="toggle-lock" data-icon="lock" title="Bloquear/desbloquear"></button>
+                    <button data-action="toggle-visible" data-icon="eye" title="Ocultar/exibir"></button>
                 </div>
             </div>
         </aside>

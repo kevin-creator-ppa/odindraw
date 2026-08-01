@@ -9,13 +9,21 @@
         { "id": "firewall", "name": "Firewall" },
         { "id": "server", "name": "Servidor" },
         { "id": "rack", "name": "Rack" },
+        { "id": "rack-bayface", "name": "Bayface de rack" },
         { "id": "ap-wifi", "name": "AP Wi-Fi" },
         { "id": "computer", "name": "Computador" },
         { "id": "notebook", "name": "Notebook" },
         { "id": "printer", "name": "Impressora" },
         { "id": "internet", "name": "Internet" },
         { "id": "cloud", "name": "Cloud" },
-        { "id": "datacenter", "name": "Datacenter" }
+        { "id": "datacenter", "name": "Datacenter" },
+        { "id": "olt", "name": "OLT" },
+        { "id": "onu", "name": "ONU" },
+        { "id": "modem", "name": "Modem" },
+        { "id": "ups", "name": "Nobreak (UPS)" },
+        { "id": "mikrotik", "name": "Roteador Mikrotik" },
+        { "id": "juniper", "name": "Roteador Juniper" },
+        { "id": "huawei", "name": "Roteador Huawei" }
       ]
     },
     {
@@ -38,7 +46,7 @@
         { "id": "square", "name": "Quadrado" },
         { "id": "diamond", "name": "Losango" },
         { "id": "hexagon", "name": "Hexágono" },
-        { "id": "triangle", "name": "Triângulo" },
+        { "id": "triangle", "name": "Mjölnir" },
         { "id": "pentagon", "name": "Pentágono" },
         { "id": "star", "name": "Estrela" }
       ]

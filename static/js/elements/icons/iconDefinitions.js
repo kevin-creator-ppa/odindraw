@@ -1,24 +1,89 @@
 /**
- * Pictogramas originais (não reproduzem ícones de nenhum produto
- * específico) em viewBox 0-100, feitos só de primitivas simples
+ * Pictogramas originais (não reproduzem ícones de nenhum produto ou
+ * marca específicos — incluindo os "de fabricante" abaixo, que usam a
+ * mesma base geométrica genérica do roteador com um selo distintivo,
+ * não logos) em viewBox 0-100, feitos só de primitivas simples
  * (rect/circle/line/polygon/path) — interpretadas por iconRenderer.js
  * tanto no canvas quanto no SVG exportado.
  */
+
+const ROUTER_BASE = [
+    { type: "rect", x: 10, y: 35, w: 80, h: 30 },
+    { type: "path", d: "M 30 50 L 70 50 M 63 43 L 70 50 L 63 57" },
+    { type: "path", d: "M 30 35 L 30 20 M 23 27 L 30 20 L 37 27" },
+    { type: "path", d: "M 70 35 L 70 20 M 63 27 L 70 20 L 77 27" },
+];
+
 export const ICONS = {
     // Redes
-    router: [
-        { type: "rect", x: 10, y: 35, w: 80, h: 30 },
-        { type: "path", d: "M 30 50 L 70 50 M 63 43 L 70 50 L 63 57" },
-        { type: "path", d: "M 30 35 L 30 20 M 23 27 L 30 20 L 37 27" },
-        { type: "path", d: "M 70 35 L 70 20 M 63 27 L 70 20 L 77 27" },
-    ],
+    router: ROUTER_BASE,
     switch: [
-        { type: "rect", x: 10, y: 30, w: 80, h: 40 },
-        { type: "line", x1: 20, y1: 45, x2: 80, y2: 45 },
-        { type: "rect", x: 18, y: 60, w: 8, h: 8, fill: true },
-        { type: "rect", x: 34, y: 60, w: 8, h: 8, fill: true },
-        { type: "rect", x: 50, y: 60, w: 8, h: 8, fill: true },
-        { type: "rect", x: 66, y: 60, w: 8, h: 8, fill: true },
+        { type: "rect", x: 6, y: 32, w: 88, h: 36 },
+        { type: "line", x1: 14, y1: 44, x2: 86, y2: 44 },
+        { type: "rect", x: 12, y: 56, w: 8, h: 8, fill: true },
+        { type: "rect", x: 26, y: 56, w: 8, h: 8, fill: true },
+        { type: "rect", x: 40, y: 56, w: 8, h: 8, fill: true },
+        { type: "rect", x: 54, y: 56, w: 8, h: 8, fill: true },
+        { type: "rect", x: 68, y: 56, w: 8, h: 8, fill: true },
+        { type: "rect", x: 80, y: 56, w: 8, h: 8, fill: true },
+    ],
+    // Roteadores "de fabricante": mesma base genérica + um selo geométrico distinto (não é logo de marca nenhuma).
+    mikrotik: [...ROUTER_BASE, { type: "circle", cx: 82, cy: 22, r: 7, fill: true }],
+    juniper: [...ROUTER_BASE, { type: "polygon", points: [[82, 14], [90, 22], [82, 30], [74, 22]], fill: true }],
+    huawei: [...ROUTER_BASE, { type: "polygon", points: [[82, 14], [90, 28], [74, 28]], fill: true }],
+    olt: [
+        { type: "rect", x: 6, y: 28, w: 88, h: 34 },
+        { type: "rect", x: 12, y: 36, w: 9, h: 9 },
+        { type: "rect", x: 24, y: 36, w: 9, h: 9 },
+        { type: "rect", x: 36, y: 36, w: 9, h: 9 },
+        { type: "rect", x: 48, y: 36, w: 9, h: 9 },
+        { type: "rect", x: 60, y: 36, w: 9, h: 9 },
+        { type: "rect", x: 72, y: 36, w: 9, h: 9 },
+        { type: "line", x1: 12, y1: 54, x2: 88, y2: 54 },
+        { type: "polygon", points: [[46, 62], [54, 62], [50, 70]], fill: true },
+        { type: "line", x1: 50, y1: 70, x2: 50, y2: 82 },
+    ],
+    onu: [
+        { type: "rect", x: 18, y: 30, w: 64, h: 34 },
+        { type: "circle", cx: 30, cy: 47, r: 4 },
+        { type: "rect", x: 44, y: 43, w: 10, h: 8 },
+        { type: "rect", x: 60, y: 43, w: 10, h: 8 },
+        { type: "path", d: "M30 30 L30 18 M26 22 L30 18 L34 22" },
+    ],
+    "rack-bayface": [
+        { type: "rect", x: 5, y: 40, w: 90, h: 20 },
+        { type: "rect", x: 10, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 19, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 28, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 37, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 46, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 55, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 64, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 73, y: 45, w: 6, h: 6 },
+        { type: "rect", x: 82, y: 45, w: 6, h: 6 },
+    ],
+    modem: [
+        { type: "rect", x: 15, y: 35, w: 70, h: 28 },
+        { type: "circle", cx: 27, cy: 49, r: 3, fill: true },
+        { type: "circle", cx: 38, cy: 49, r: 3, fill: true },
+        { type: "circle", cx: 49, cy: 49, r: 3, fill: true },
+        { type: "path", d: "M70 35 Q76 24 85 20" },
+    ],
+    ups: [
+        { type: "rect", x: 28, y: 12, w: 44, h: 76 },
+        { type: "polygon", points: [[52, 26], [40, 54], [50, 54], [44, 76], [62, 44], [51, 44]], fill: true },
+    ],
+    firewall: [
+        { type: "rect", x: 10, y: 10, w: 80, h: 80 },
+        { type: "line", x1: 10, y1: 30, x2: 90, y2: 30 },
+        { type: "line", x1: 10, y1: 50, x2: 90, y2: 50 },
+        { type: "line", x1: 10, y1: 70, x2: 90, y2: 70 },
+        { type: "line", x1: 30, y1: 10, x2: 30, y2: 30 },
+        { type: "line", x1: 70, y1: 30, x2: 70, y2: 50 },
+        { type: "line", x1: 30, y1: 50, x2: 30, y2: 70 },
+        { type: "line", x1: 70, y1: 70, x2: 70, y2: 90 },
+        { type: "line", x1: 50, y1: 10, x2: 50, y2: 30 },
+        { type: "line", x1: 50, y1: 50, x2: 50, y2: 70 },
     ],
     firewall: [
         { type: "rect", x: 10, y: 10, w: 80, h: 80 },
@@ -110,7 +175,13 @@ export const ICONS = {
     square: [{ type: "rect", x: 15, y: 15, w: 70, h: 70 }],
     diamond: [{ type: "polygon", points: [[50, 8], [92, 50], [50, 92], [8, 50]] }],
     hexagon: [{ type: "polygon", points: [[50, 8], [86, 29], [86, 71], [50, 92], [14, 71], [14, 29]] }],
-    triangle: [{ type: "polygon", points: [[50, 10], [90, 85], [10, 85]] }],
+    // Mjölnir — martelo de Thor, um aceno ao nome do projeto (OdinDraw). Silhueta original e genérica.
+    triangle: [
+        { type: "polygon", points: [[10, 12], [90, 12], [80, 40], [20, 40]] },
+        { type: "line", x1: 18, y1: 26, x2: 82, y2: 26 },
+        { type: "rect", x: 42, y: 40, w: 16, h: 40 },
+        { type: "circle", cx: 50, cy: 86, r: 7 },
+    ],
     pentagon: [{ type: "polygon", points: [[50, 8], [90, 37], [75, 84], [25, 84], [10, 37]] }],
     star: [
         {

@@ -12,8 +12,8 @@ import { duplicateSelected, deleteSelected } from "../managers/objectActions.js"
  *
  * "Tipo de rota" só aparece para conectores; "Rotação" some para eles
  * (a posição do conector é sempre recalculada a partir dos objetos
- * ligados, rotação não se aplica). Alinhamento de texto e grupos ficam
- * para um refinamento posterior.
+ * ligados, rotação não se aplica). Fonte/tamanho/estilo/alinhamento só
+ * aparecem para elementos de texto.
  */
 export class PropertiesPanel {
     constructor({ scene, selectionManager, renderer, eventBus, historyManager }) {
@@ -31,6 +31,10 @@ export class PropertiesPanel {
         this.rotation = document.querySelector('[data-prop="rotation"]');
         this.fontFamily = document.querySelector('[data-prop="font-family"]');
         this.fontSize = document.querySelector('[data-prop="font-size"]');
+        this.boldBtn = document.querySelector('[data-prop="bold"]');
+        this.italicBtn = document.querySelector('[data-prop="italic"]');
+        this.underlineBtn = document.querySelector('[data-prop="underline"]');
+        this.alignButtons = document.querySelectorAll('[data-prop="align"]');
         this.routeType = document.querySelector('[data-prop="route-type"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
@@ -42,9 +46,13 @@ export class PropertiesPanel {
             this.rotation,
             this.fontFamily,
             this.fontSize,
+            this.boldBtn,
+            this.italicBtn,
+            this.underlineBtn,
             this.routeType,
             this.lockBtn,
             this.visibleBtn,
+            ...this.alignButtons,
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
@@ -54,6 +62,7 @@ export class PropertiesPanel {
 
         this._connectorOnlyRows = document.querySelectorAll("[data-connector-only]");
         this._hiddenForConnectorRows = document.querySelectorAll("[data-hide-for-connector]");
+        this._textOnlyRows = document.querySelectorAll("[data-text-only]");
 
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected[0] ?? null));
@@ -77,18 +86,38 @@ export class PropertiesPanel {
         this.opacity.addEventListener("change", () => this._commit());
         this.rotation.addEventListener("input", () => this._apply((el) => (el.rotation = Number(this.rotation.value))));
         this.rotation.addEventListener("change", () => this._commit());
+
         this.fontFamily.addEventListener("change", () => {
             this._apply((el) => {
-                if (el.font !== undefined) el.font = this.fontFamily.value;
+                if (el.font === undefined) return;
+                el.font = this.fontFamily.value;
+                el.autoSize?.();
             });
             this._commit();
         });
         this.fontSize.addEventListener("input", () =>
             this._apply((el) => {
-                if (el.fontSize !== undefined) el.fontSize = Number(this.fontSize.value);
+                if (el.fontSize === undefined) return;
+                el.fontSize = Number(this.fontSize.value);
+                el.autoSize?.();
             })
         );
         this.fontSize.addEventListener("change", () => this._commit());
+
+        this._bindTextToggle(this.boldBtn, "bold");
+        this._bindTextToggle(this.italicBtn, "italic");
+        this._bindTextToggle(this.underlineBtn, "underline");
+
+        this.alignButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                this._apply((el) => {
+                    if (el.align !== undefined) el.align = button.dataset.value;
+                });
+                this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b === button));
+                this._commit();
+            });
+        });
+
         this.routeType.addEventListener("change", () => {
             this._apply((el) => {
                 if (el.routeType !== undefined) el.routeType = this.routeType.value;
@@ -133,6 +162,19 @@ export class PropertiesPanel {
             this._current.visible = !this._current.visible;
             this._syncToggleButtons();
             this.renderer.markDirty();
+            this._commit();
+        });
+    }
+
+    /** Botão independente (não exclusivo) de estilo de texto: bold/italic/underline. */
+    _bindTextToggle(button, key) {
+        button.addEventListener("click", () => {
+            this._apply((el) => {
+                if (el[key] === undefined) return;
+                el[key] = !el[key];
+                el.autoSize?.();
+            });
+            button.classList.toggle("segmented__active", Boolean(this._current?.[key]));
             this._commit();
         });
     }
@@ -210,12 +252,19 @@ export class PropertiesPanel {
         this._syncSegmentedActive(this.strokeWidthGroup, String(element.style.strokeWidth));
         this._syncSegmentedActive(this.strokeStyleGroup, element.style.strokeStyle);
         this._syncToggleButtons();
+
+        this.boldBtn.classList.toggle("segmented__active", Boolean(element.bold));
+        this.italicBtn.classList.toggle("segmented__active", Boolean(element.italic));
+        this.underlineBtn.classList.toggle("segmented__active", Boolean(element.underline));
+        this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b.dataset.value === element.align));
     }
 
     _toggleTypeSpecificRows(element) {
         const isConnector = element?.type === "connector";
+        const isText = element?.type === "text";
         this._connectorOnlyRows.forEach((row) => (row.hidden = !isConnector));
         this._hiddenForConnectorRows.forEach((row) => (row.hidden = isConnector));
+        this._textOnlyRows.forEach((row) => (row.hidden = !isText));
     }
 
     _setEnabled(enabled) {
