@@ -39,6 +39,7 @@
                 <button class="btn btn--icon" data-action="zoom-in" title="Zoom +">+</button>
                 <button class="btn" data-action="zoom-fit" title="Ajustar à tela">Ajustar</button>
                 <span class="divider"></span>
+                <button class="btn btn--icon" data-action="toggle-grid" data-active="true" title="Mostrar/ocultar grade">&#9638;</button>
                 <button class="btn btn--icon" data-action="toggle-theme" title="Alternar tema claro/escuro">&#9680;</button>
             </div>
         </header>
@@ -68,10 +69,7 @@
         </aside>
 
         <!-- Canvas area -->
-        <main class="canvas-area">
-            <div class="canvas-placeholder" data-canvas-placeholder>
-                <p>O motor de canvas será implementado na Etapa 3.</p>
-            </div>
+        <main class="canvas-area" data-canvas-area>
             <canvas id="static-canvas" class="canvas-layer"></canvas>
             <canvas id="interactive-canvas" class="canvas-layer"></canvas>
 

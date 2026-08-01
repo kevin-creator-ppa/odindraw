@@ -1,0 +1,107 @@
+import { mod } from "../utils/geometry.js";
+
+const BASE_GRID_SPACING = 24;
+const MIN_SCREEN_SPACING = 8;
+const MAX_SCREEN_SPACING = 64;
+
+/**
+ * Desenha a cena em duas camadas de canvas:
+ *  - staticCanvas: grid + elementos do diagrama. Só é redesenhada quando
+ *    algo muda (dirty flag), nunca a cada frame.
+ *  - interactiveCanvas: seleção, alças, preview de desenho. Reservada
+ *    para as próximas etapas (ainda não desenha nada).
+ *
+ * Separar as duas evita redesenhar milhares de elementos a cada movimento
+ * de mouse durante uma interação.
+ */
+export class Renderer {
+    constructor({ container, staticCanvas, interactiveCanvas, camera, scene }) {
+        this.container = container;
+        this.staticCanvas = staticCanvas;
+        this.interactiveCanvas = interactiveCanvas;
+        this.camera = camera;
+        this.scene = scene;
+
+        this.staticCtx = staticCanvas.getContext("2d");
+        this.interactiveCtx = interactiveCanvas.getContext("2d");
+
+        this.gridEnabled = true;
+        this.width = 0;
+        this.height = 0;
+        this.dpr = window.devicePixelRatio || 1;
+        this._dirty = true;
+
+        this._resizeObserver = new ResizeObserver(() => this.resize());
+        this._resizeObserver.observe(container);
+        this.resize();
+
+        this._tick = this._tick.bind(this);
+        requestAnimationFrame(this._tick);
+    }
+
+    markDirty() {
+        this._dirty = true;
+    }
+
+    setGridEnabled(enabled) {
+        this.gridEnabled = enabled;
+        this.markDirty();
+    }
+
+    resize() {
+        const { width, height } = this.container.getBoundingClientRect();
+        this.width = width;
+        this.height = height;
+        this.dpr = window.devicePixelRatio || 1;
+
+        for (const canvas of [this.staticCanvas, this.interactiveCanvas]) {
+            canvas.width = Math.max(1, Math.round(width * this.dpr));
+            canvas.height = Math.max(1, Math.round(height * this.dpr));
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+        }
+        this.markDirty();
+    }
+
+    _tick() {
+        if (this._dirty) {
+            this._renderStatic();
+            this._dirty = false;
+        }
+        requestAnimationFrame(this._tick);
+    }
+
+    _renderStatic() {
+        const ctx = this.staticCtx;
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        if (this.gridEnabled) {
+            this._drawGrid(ctx);
+        }
+
+        // Etapa 5+: this.scene.getVisibleObjects(viewportRect).forEach(el => el.render(ctx, this.camera));
+    }
+
+    _drawGrid(ctx) {
+        const { zoom, offsetX, offsetY } = this.camera;
+
+        let worldSpacing = BASE_GRID_SPACING;
+        while (worldSpacing * zoom < MIN_SCREEN_SPACING) worldSpacing *= 2;
+        while (worldSpacing * zoom > MAX_SCREEN_SPACING) worldSpacing /= 2;
+        const spacing = worldSpacing * zoom;
+
+        const startX = mod(offsetX, spacing);
+        const startY = mod(offsetY, spacing);
+        const dotRadius = Math.min(1.4, 0.75 + zoom * 0.25);
+
+        ctx.fillStyle = getComputedStyle(this.container).getPropertyValue("--grid-dot").trim() || "#c9c9d1";
+        for (let x = startX; x < this.width + spacing; x += spacing) {
+            for (let y = startY; y < this.height + spacing; y += spacing) {
+                ctx.beginPath();
+                ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+}

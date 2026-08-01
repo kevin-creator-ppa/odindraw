@@ -50,6 +50,7 @@ h1, h2, h3, p {
     --accent: #6965db;
     --accent-contrast: #ffffff;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --grid-dot: #cfcfd6;
 }
 
 :root[data-theme="dark"] {
@@ -64,6 +65,7 @@ h1, h2, h3, p {
     --accent: #a8a5ff;
     --accent-contrast: #171717;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --grid-dot: #3a3a42;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -79,5 +81,6 @@ h1, h2, h3, p {
         --accent: #a8a5ff;
         --accent-contrast: #171717;
         --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        --grid-dot: #3a3a42;
     }
 }
