@@ -1,0 +1,3 @@
+Flask>=3.0
+svglib>=1.5
+reportlab>=4.0

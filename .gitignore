@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Flask
+instance/
+.flaskenv
+
+# Dados de diagramas gerados em uso (mantém a pasta, ignora o conteúdo)
+data/diagrams/*.json
+!data/diagrams/.gitkeep
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

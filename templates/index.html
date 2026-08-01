@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OdinDraw</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+</head>
+<body>
+    <div class="app">
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="topbar__group topbar__group--brand">
+                <span class="brand">OdinDraw</span>
+            </div>
+
+            <div class="topbar__group">
+                <button class="btn" data-action="new" title="Novo (Ctrl+N)">Novo</button>
+                <button class="btn" data-action="open" title="Abrir (Ctrl+O)">Abrir</button>
+                <button class="btn" data-action="save" title="Salvar (Ctrl+S)">Salvar</button>
+                <span class="divider"></span>
+                <div class="dropdown" data-dropdown="export">
+                    <button class="btn" data-action="export-menu" title="Exportar">Exportar</button>
+                    <div class="dropdown__menu">
+                        <button class="dropdown__item" data-action="export-png">PNG</button>
+                        <button class="dropdown__item" data-action="export-svg">SVG</button>
+                        <button class="dropdown__item" data-action="export-pdf">PDF</button>
+                    </div>
+                </div>
+                <span class="divider"></span>
+                <button class="btn btn--icon" data-action="undo" title="Desfazer (Ctrl+Z)">&#8630;</button>
+                <button class="btn btn--icon" data-action="redo" title="Refazer (Ctrl+Y)">&#8631;</button>
+            </div>
+
+            <div class="topbar__group topbar__group--right">
+                <button class="btn btn--icon" data-action="zoom-out" title="Zoom -">&minus;</button>
+                <span class="zoom-level" data-zoom-level>100%</span>
+                <button class="btn btn--icon" data-action="zoom-in" title="Zoom +">+</button>
+                <button class="btn" data-action="zoom-fit" title="Ajustar à tela">Ajustar</button>
+                <span class="divider"></span>
+                <button class="btn btn--icon" data-action="toggle-theme" title="Alternar tema claro/escuro">&#9680;</button>
+            </div>
+        </header>
+
+        <!-- Left sidebar: tools -->
+        <aside class="sidebar sidebar--left" aria-label="Ferramentas">
+            <div class="tool-group">
+                <button class="tool tool--active" data-tool="select" title="Seleção (V)">&#9650;</button>
+                <button class="tool" data-tool="pan" title="Mão / Pan (H)">&#9995;</button>
+            </div>
+            <span class="divider divider--horizontal"></span>
+            <div class="tool-group">
+                <button class="tool" data-tool="rectangle" title="Retângulo (R)">&#9633;</button>
+                <button class="tool" data-tool="square" title="Quadrado">&#9723;</button>
+                <button class="tool" data-tool="circle" title="Círculo">&#9675;</button>
+                <button class="tool" data-tool="ellipse" title="Elipse (O)">&#11052;</button>
+                <button class="tool" data-tool="line" title="Linha (L)">&#9585;</button>
+                <button class="tool" data-tool="arrow" title="Seta (A)">&#8594;</button>
+                <button class="tool" data-tool="orthogonal-line" title="Linha ortogonal">&#8735;</button>
+            </div>
+            <span class="divider divider--horizontal"></span>
+            <div class="tool-group">
+                <button class="tool" data-tool="text" title="Texto (T)">A</button>
+                <button class="tool" data-tool="freehand" title="Desenho livre (P)">&#9998;</button>
+                <button class="tool" data-tool="eraser" title="Borracha (E)">&#9003;</button>
+            </div>
+        </aside>
+
+        <!-- Canvas area -->
+        <main class="canvas-area">
+            <div class="canvas-placeholder" data-canvas-placeholder>
+                <p>O motor de canvas será implementado na Etapa 3.</p>
+            </div>
+            <canvas id="static-canvas" class="canvas-layer"></canvas>
+            <canvas id="interactive-canvas" class="canvas-layer"></canvas>
+
+            <div class="minimap" data-minimap title="Minimapa (Etapa 10)">
+                <span class="minimap__label">Minimapa</span>
+            </div>
+        </main>
+
+        <!-- Right sidebar: properties -->
+        <aside class="sidebar sidebar--right" aria-label="Propriedades">
+            <h2 class="sidebar__title">Propriedades</h2>
+
+            <div class="property">
+                <label>Cor de preenchimento</label>
+                <input type="color" value="#ffffff" data-prop="fill">
+            </div>
+            <div class="property">
+                <label>Cor da borda</label>
+                <input type="color" value="#1e1e1e" data-prop="stroke">
+            </div>
+            <div class="property">
+                <label>Espessura</label>
+                <input type="range" min="1" max="12" value="2" data-prop="stroke-width">
+            </div>
+            <div class="property">
+                <label>Tipo de linha</label>
+                <select data-prop="stroke-style">
+                    <option value="solid">Sólida</option>
+                    <option value="dashed">Tracejada</option>
+                    <option value="dotted">Pontilhada</option>
+                </select>
+            </div>
+            <div class="property">
+                <label>Transparência</label>
+                <input type="range" min="0" max="100" value="100" data-prop="opacity">
+            </div>
+
+            <span class="divider divider--horizontal"></span>
+
+            <div class="property">
+                <label>Fonte</label>
+                <select data-prop="font-family">
+                    <option>Inter</option>
+                    <option>Arial</option>
+                    <option>Georgia</option>
+                    <option>Monospace</option>
+                </select>
+            </div>
+            <div class="property">
+                <label>Tamanho da fonte</label>
+                <input type="number" min="8" max="96" value="14" data-prop="font-size">
+            </div>
+            <div class="property">
+                <label>Alinhamento</label>
+                <div class="segmented">
+                    <button data-prop="align" data-value="left">&#8676;</button>
+                    <button data-prop="align" data-value="center">&#8596;</button>
+                    <button data-prop="align" data-value="right">&#8677;</button>
+                </div>
+            </div>
+            <div class="property">
+                <label>Rotação</label>
+                <input type="number" min="-180" max="180" value="0" data-prop="rotation">
+            </div>
+
+            <span class="divider divider--horizontal"></span>
+
+            <div class="property">
+                <label>Camada</label>
+                <div class="segmented">
+                    <button data-action="bring-front" title="Trazer para frente">&#8593;</button>
+                    <button data-action="send-back" title="Enviar para trás">&#8595;</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
