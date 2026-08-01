@@ -15,6 +15,8 @@ import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
+import { FileMenu } from "./ui/FileMenu.js";
+import { SaveLoad } from "./io/SaveLoad.js";
 import { SelectTool } from "./tools/SelectTool.js";
 import { PanTool } from "./tools/PanTool.js";
 import { RectangleTool } from "./tools/RectangleTool.js";
@@ -66,9 +68,12 @@ function initExportMenu() {
         event.stopPropagation();
         dropdown.classList.toggle("dropdown--open");
     });
+}
 
+/** Fecha qualquer dropdown aberto (exportar, abrir diagrama) ao clicar fora dele. */
+function initDropdownAutoClose() {
     document.addEventListener("click", () => {
-        dropdown.classList.remove("dropdown--open");
+        document.querySelectorAll(".dropdown--open").forEach((el) => el.classList.remove("dropdown--open"));
     });
 }
 
@@ -107,8 +112,9 @@ function initCanvasEngine() {
     });
 
     const input = new InputController({ element: canvasArea, camera, renderer, eventBus, toolManager });
+    const saveLoad = new SaveLoad({ scene, camera, renderer, eventBus });
 
-    return { canvasArea, eventBus, scene, camera, renderer, toolManager, selectionManager, input };
+    return { canvasArea, eventBus, scene, camera, renderer, toolManager, selectionManager, input, saveLoad };
 }
 
 function initZoomControls({ camera, renderer, eventBus }) {
@@ -312,17 +318,42 @@ function initObjectShortcuts({ scene, selectionManager, renderer }) {
     });
 }
 
+/** Ctrl+N novo, Ctrl+O abrir, Ctrl+S salvar — os cliques nos botões já cobrem o mesmo fluxo. */
+function initFileShortcuts({ eventBus }) {
+    const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+
+    window.addEventListener("keydown", (event) => {
+        if (EDITABLE_TAGS.has(event.target.tagName)) return;
+        if (!(event.ctrlKey || event.metaKey)) return;
+
+        const key = event.key.toLowerCase();
+        if (key === "n") {
+            event.preventDefault();
+            document.querySelector('[data-action="new"]').click();
+        } else if (key === "o") {
+            event.preventDefault();
+            document.querySelector('[data-action="open"]').click();
+        } else if (key === "s") {
+            event.preventDefault();
+            document.querySelector('[data-action="save"]').click();
+        }
+    });
+}
+
 function init() {
     const engine = initCanvasEngine();
 
     initTheme(() => engine.renderer.markDirty());
     initExportMenu();
+    initDropdownAutoClose();
     initZoomControls(engine);
     initGridToggle(engine.renderer);
     initToolSelection(engine.toolManager);
     initElementCreation(engine);
     initObjectShortcuts(engine);
+    initFileShortcuts(engine);
     new PropertiesPanel(engine);
+    new FileMenu(engine);
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;

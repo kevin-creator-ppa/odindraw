@@ -22,8 +22,10 @@ def create_app(config_name=None):
     os.makedirs(app.config["LIBRARY_DIR"], exist_ok=True)
 
     from routes.main import main_bp
+    from routes.diagrams import diagrams_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(diagrams_bp)
 
     return app
 

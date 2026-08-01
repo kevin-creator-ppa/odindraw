@@ -42,6 +42,12 @@
     letter-spacing: -0.02em;
 }
 
+.diagram-name {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 .divider {
     width: 1px;
     height: 24px;
@@ -122,6 +128,30 @@
 
 .dropdown__item:hover {
     background: var(--bg-hover);
+}
+
+.dropdown__menu[data-open-diagram-menu] {
+    min-width: 220px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.dropdown__item--diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+}
+
+.dropdown__item-date {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.dropdown__empty {
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 /* Sidebars */

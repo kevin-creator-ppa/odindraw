@@ -13,11 +13,17 @@
         <header class="topbar">
             <div class="topbar__group topbar__group--brand">
                 <span class="brand">OdinDraw</span>
+                <span class="diagram-name" data-diagram-name>Sem título</span>
             </div>
 
             <div class="topbar__group">
                 <button class="btn" data-action="new" title="Novo (Ctrl+N)">Novo</button>
-                <button class="btn" data-action="open" title="Abrir (Ctrl+O)">Abrir</button>
+                <div class="dropdown" data-dropdown="open-diagram">
+                    <button class="btn" data-action="open" title="Abrir (Ctrl+O)">Abrir</button>
+                    <div class="dropdown__menu" data-open-diagram-menu>
+                        <p class="dropdown__empty">Nenhum diagrama salvo</p>
+                    </div>
+                </div>
                 <button class="btn" data-action="save" title="Salvar (Ctrl+S)">Salvar</button>
                 <span class="divider"></span>
                 <div class="dropdown" data-dropdown="export">

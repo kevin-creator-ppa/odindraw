@@ -22,6 +22,19 @@ export class Scene {
         return element;
     }
 
+    /** Reinsere um elemento já reconstruído (Etapa 7 — abrir diagrama), preservando seu zIndex original. */
+    restoreObject(element) {
+        this.objects.push(element);
+        this._nextZIndex = Math.max(this._nextZIndex, (element.zIndex ?? 0) + 1);
+        return element;
+    }
+
+    clear() {
+        this.objects = [];
+        this.selection.clear();
+        this._nextZIndex = 0;
+    }
+
     removeObject(element) {
         this.objects = this.objects.filter((o) => o !== element);
         this.selection.delete(element);
