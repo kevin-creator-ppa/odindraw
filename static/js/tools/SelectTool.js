@@ -6,6 +6,7 @@ const OVERLAY_PADDING = 4;
 const HANDLE_OFFSET = 14;
 const HANDLE_RADIUS = 5;
 const HANDLE_HIT_RADIUS = 9;
+const LINE_TYPES = new Set(["line", "arrow", "orthogonal-line", "connector"]);
 
 /**
  * Ferramenta padrão: clique seleciona o elemento sob o cursor (o de
@@ -13,12 +14,15 @@ const HANDLE_HIT_RADIUS = 9;
  * grade quando ela está visível. Objetos bloqueados são selecionáveis
  * (para poder desbloquear) mas não arrastáveis.
  *
- * Quando há um único elemento (não conector) selecionado, 4 alças
- * aparecem nas extremidades (N/E/S/W); arrastar a partir de uma delas
- * cria um Connector saindo dali — solto se soltar em área vazia, ou
- * ligado se soltar sobre outro objeto (como o "hover arrows" do
- * draw.io). Redimensionar/rotacionar pelo mouse e seleção múltipla
- * ficam para um refinamento posterior.
+ * Duas alças diferentes aparecem conforme o tipo do único elemento
+ * selecionado:
+ *  - Formas com área (retângulo, elipse, texto, componente...): 4 alças
+ *    nas bordas (N/E/S/W) — arrastar uma delas cria um Connector saindo
+ *    dali, ligado se soltar sobre outro objeto.
+ *  - Linha/seta/ortogonal/conector: 2 alças nas pontas — arrastar uma
+ *    reposiciona aquele extremo (reshape). Num Connector, soltar sobre
+ *    outro objeto religa a ponta a ele; soltar em área vazia solta a
+ *    ponta (fica livre naquele ponto).
  */
 export class SelectTool extends Tool {
     constructor() {
@@ -28,6 +32,7 @@ export class SelectTool extends Tool {
         this._dragOriginXY = null;
         this._moved = false;
         this._connectorDrag = null;
+        this._pointDrag = null;
         this._unsubscribeCamera = null;
     }
 
@@ -41,17 +46,27 @@ export class SelectTool extends Tool {
         this._unsubscribeCamera = null;
         this._dragTarget = null;
         this._connectorDrag = null;
+        this._pointDrag = null;
         context.renderer.clearInteractive();
     }
 
     onPointerDown(context, point) {
-        const single = this._singleConnectableSelection(context);
-        if (single) {
+        const single = this._singleSelection(context);
+        if (single && !single.locked) {
             const screenPoint = context.camera.worldToScreen(point.x, point.y);
-            const handle = this._hitTestHandle(context, single, screenPoint);
-            if (handle) {
-                this._connectorDrag = { fromElement: single, fromWorldPoint: handle.worldPoint };
-                return;
+
+            if (LINE_TYPES.has(single.type)) {
+                const endpoint = this._hitTestPointHandle(context, single, screenPoint);
+                if (endpoint) {
+                    this._pointDrag = { element: single, kind: endpoint.kind };
+                    return;
+                }
+            } else {
+                const handle = this._hitTestBoxHandle(context, single, screenPoint);
+                if (handle) {
+                    this._connectorDrag = { fromElement: single, fromWorldPoint: handle.worldPoint };
+                    return;
+                }
             }
         }
 
@@ -66,20 +81,24 @@ export class SelectTool extends Tool {
     }
 
     onPointerMove(context, point) {
+        if (this._pointDrag) {
+            const { element, kind } = this._pointDrag;
+            const snapped = this._snapToGrid(context, point);
+
+            if (element.type === "connector") {
+                this._redrawOverlay(context);
+                this._drawPreviewLine(context, this._connectorEndpointFor(element, kind === "start" ? "end" : "start"), point);
+            } else {
+                element.setEndpoint(kind, snapped);
+                context.renderer.markDirty();
+                this._redrawOverlay(context);
+            }
+            return;
+        }
+
         if (this._connectorDrag) {
             this._redrawOverlay(context);
-            const a = context.camera.worldToScreen(this._connectorDrag.fromWorldPoint.x, this._connectorDrag.fromWorldPoint.y);
-            const b = context.camera.worldToScreen(point.x, point.y);
-            const ctx = context.renderer.interactiveCtx;
-            ctx.save();
-            ctx.strokeStyle = OVERLAY_COLOR;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6, 4]);
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-            ctx.restore();
+            this._drawPreviewLine(context, this._connectorDrag.fromWorldPoint, point);
             return;
         }
 
@@ -100,6 +119,28 @@ export class SelectTool extends Tool {
     }
 
     onPointerUp(context, point) {
+        if (this._pointDrag) {
+            const { element, kind } = this._pointDrag;
+            if (element.type === "connector") {
+                const hit = context.scene.getObjectAtPoint(point);
+                const otherEndObjectId = kind === "start" ? element.endObjectId : element.startObjectId;
+                const validHit = hit && hit !== element && hit.id !== otherEndObjectId ? hit : null;
+
+                if (kind === "start") {
+                    element.startObjectId = validHit ? validHit.id : null;
+                    if (!validHit) element.startPoint = this._snapToGrid(context, point);
+                } else {
+                    element.endObjectId = validHit ? validHit.id : null;
+                    if (!validHit) element.endPoint = this._snapToGrid(context, point);
+                }
+            }
+            context.renderer.markDirty();
+            context.historyManager?.pushSnapshot();
+            this._pointDrag = null;
+            this._redrawOverlay(context);
+            return;
+        }
+
         if (this._connectorDrag) {
             const { fromElement, fromWorldPoint } = this._connectorDrag;
             const targetElement = context.scene.getObjectAtPoint(point);
@@ -126,15 +167,62 @@ export class SelectTool extends Tool {
         this._moved = false;
     }
 
-    _singleConnectableSelection(context) {
+    _snapToGrid(context, point) {
+        if (!context.renderer.gridEnabled) return point;
+        return {
+            x: Math.round(point.x / BASE_GRID_SPACING) * BASE_GRID_SPACING,
+            y: Math.round(point.y / BASE_GRID_SPACING) * BASE_GRID_SPACING,
+        };
+    }
+
+    _connectorEndpointFor(connector, kind) {
+        return kind === "start" ? connector._resolvedStart : connector._resolvedEnd;
+    }
+
+    _drawPreviewLine(context, fromWorld, toWorld) {
+        const a = context.camera.worldToScreen(fromWorld.x, fromWorld.y);
+        const b = context.camera.worldToScreen(toWorld.x, toWorld.y);
+        const ctx = context.renderer.interactiveCtx;
+        ctx.save();
+        ctx.strokeStyle = OVERLAY_COLOR;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    _singleSelection(context) {
         const selected = context.selectionManager.getSelected();
-        if (selected.length !== 1) return null;
-        const [element] = selected;
-        return element.type !== "connector" ? element : null;
+        return selected.length === 1 ? selected[0] : null;
+    }
+
+    /** Pontas editáveis (mundo) de um elemento tipo linha/conector. */
+    _getEditableEndpoints(context, element) {
+        if (element.type === "connector") {
+            element.beforeHitTest(context.scene);
+            return [
+                { worldPoint: element._resolvedStart, kind: "start" },
+                { worldPoint: element._resolvedEnd, kind: "end" },
+            ];
+        }
+        return [
+            { worldPoint: { x: element.x1, y: element.y1 }, kind: "start" },
+            { worldPoint: { x: element.x2, y: element.y2 }, kind: "end" },
+        ];
+    }
+
+    _hitTestPointHandle(context, element, screenPoint) {
+        return this._getEditableEndpoints(context, element).find((ep) => {
+            const s = context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y);
+            return Math.hypot(screenPoint.x - s.x, screenPoint.y - s.y) <= HANDLE_HIT_RADIUS;
+        });
     }
 
     /** Pontos médios das 4 bordas do bbox, em coordenadas de tela (com offset pra fora) e de mundo. */
-    _getHandlePositions(context, element) {
+    _getBoxHandlePositions(context, element) {
         const b = element.getBounds();
         const topLeft = context.camera.worldToScreen(b.x, b.y);
         const w = b.width * context.camera.zoom;
@@ -148,8 +236,8 @@ export class SelectTool extends Tool {
         ];
     }
 
-    _hitTestHandle(context, element, screenPoint) {
-        return this._getHandlePositions(context, element).find(
+    _hitTestBoxHandle(context, element, screenPoint) {
+        return this._getBoxHandlePositions(context, element).find(
             (h) => Math.hypot(screenPoint.x - h.x, screenPoint.y - h.y) <= HANDLE_HIT_RADIUS
         );
     }
@@ -159,31 +247,43 @@ export class SelectTool extends Tool {
         const selected = context.selectionManager.getSelected();
         if (selected.length === 0) return;
 
-        const ctx = context.renderer.interactiveCtx;
-        ctx.save();
-        ctx.strokeStyle = OVERLAY_COLOR;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([5, 4]);
+        const single = this._singleSelection(context);
+        const isLineShaped = single && LINE_TYPES.has(single.type);
 
-        selected.forEach((element) => {
-            const bounds = element.getBounds();
-            const topLeft = context.camera.worldToScreen(bounds.x, bounds.y);
-            const w = bounds.width * context.camera.zoom;
-            const h = bounds.height * context.camera.zoom;
-            ctx.strokeRect(
-                topLeft.x - OVERLAY_PADDING,
-                topLeft.y - OVERLAY_PADDING,
-                w + OVERLAY_PADDING * 2,
-                h + OVERLAY_PADDING * 2
+        if (!isLineShaped) {
+            const ctx = context.renderer.interactiveCtx;
+            ctx.save();
+            ctx.strokeStyle = OVERLAY_COLOR;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 4]);
+            selected.forEach((element) => {
+                const bounds = element.getBounds();
+                const topLeft = context.camera.worldToScreen(bounds.x, bounds.y);
+                const w = bounds.width * context.camera.zoom;
+                const h = bounds.height * context.camera.zoom;
+                ctx.strokeRect(
+                    topLeft.x - OVERLAY_PADDING,
+                    topLeft.y - OVERLAY_PADDING,
+                    w + OVERLAY_PADDING * 2,
+                    h + OVERLAY_PADDING * 2
+                );
+            });
+            ctx.restore();
+        }
+
+        if (!single) return;
+        if (isLineShaped) {
+            const screenPoints = this._getEditableEndpoints(context, single).map((ep) =>
+                context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y)
             );
-        });
-        ctx.restore();
-
-        const single = this._singleConnectableSelection(context);
-        if (single) this._drawHandles(context, single);
+            this._drawCircleHandles(context, screenPoints);
+        } else {
+            this._drawCircleHandles(context, this._getBoxHandlePositions(context, single));
+        }
     }
 
-    _drawHandles(context, element) {
+    /** `points` já em coordenadas de tela (screen), com pelo menos {x, y}. */
+    _drawCircleHandles(context, points) {
         const ctx = context.renderer.interactiveCtx;
         ctx.save();
         ctx.fillStyle = "#ffffff";
@@ -191,9 +291,9 @@ export class SelectTool extends Tool {
         ctx.lineWidth = 1.5;
         ctx.setLineDash([]);
 
-        this._getHandlePositions(context, element).forEach((h) => {
+        points.forEach((p) => {
             ctx.beginPath();
-            ctx.arc(h.x, h.y, HANDLE_RADIUS, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         });

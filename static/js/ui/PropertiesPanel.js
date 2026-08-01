@@ -36,6 +36,8 @@ export class PropertiesPanel {
         this.underlineBtn = document.querySelector('[data-prop="underline"]');
         this.alignButtons = document.querySelectorAll('[data-prop="align"]');
         this.routeType = document.querySelector('[data-prop="route-type"]');
+        this.startArrowBtn = document.querySelector('[data-prop="start-arrow"]');
+        this.endArrowBtn = document.querySelector('[data-prop="end-arrow"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
 
@@ -50,6 +52,8 @@ export class PropertiesPanel {
             this.italicBtn,
             this.underlineBtn,
             this.routeType,
+            this.startArrowBtn,
+            this.endArrowBtn,
             this.lockBtn,
             this.visibleBtn,
             ...this.alignButtons,
@@ -63,6 +67,7 @@ export class PropertiesPanel {
         this._connectorOnlyRows = document.querySelectorAll("[data-connector-only]");
         this._hiddenForConnectorRows = document.querySelectorAll("[data-hide-for-connector]");
         this._textOnlyRows = document.querySelectorAll("[data-text-only]");
+        this._lineOnlyRows = document.querySelectorAll("[data-line-only]");
 
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected[0] ?? null));
@@ -104,9 +109,11 @@ export class PropertiesPanel {
         );
         this.fontSize.addEventListener("change", () => this._commit());
 
-        this._bindTextToggle(this.boldBtn, "bold");
-        this._bindTextToggle(this.italicBtn, "italic");
-        this._bindTextToggle(this.underlineBtn, "underline");
+        this._bindBooleanToggle(this.boldBtn, "bold");
+        this._bindBooleanToggle(this.italicBtn, "italic");
+        this._bindBooleanToggle(this.underlineBtn, "underline");
+        this._bindBooleanToggle(this.startArrowBtn, "startArrow");
+        this._bindBooleanToggle(this.endArrowBtn, "endArrow");
 
         this.alignButtons.forEach((button) => {
             button.addEventListener("click", () => {
@@ -166,8 +173,8 @@ export class PropertiesPanel {
         });
     }
 
-    /** Botão independente (não exclusivo) de estilo de texto: bold/italic/underline. */
-    _bindTextToggle(button, key) {
+    /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (bold/italic/underline/startArrow/endArrow). */
+    _bindBooleanToggle(button, key) {
         button.addEventListener("click", () => {
             this._apply((el) => {
                 if (el[key] === undefined) return;
@@ -257,14 +264,18 @@ export class PropertiesPanel {
         this.italicBtn.classList.toggle("segmented__active", Boolean(element.italic));
         this.underlineBtn.classList.toggle("segmented__active", Boolean(element.underline));
         this.alignButtons.forEach((b) => b.classList.toggle("segmented__active", b.dataset.value === element.align));
+        this.startArrowBtn.classList.toggle("segmented__active", Boolean(element.startArrow));
+        this.endArrowBtn.classList.toggle("segmented__active", Boolean(element.endArrow));
     }
 
     _toggleTypeSpecificRows(element) {
         const isConnector = element?.type === "connector";
         const isText = element?.type === "text";
+        const isLine = ["line", "arrow", "orthogonal-line", "connector"].includes(element?.type);
         this._connectorOnlyRows.forEach((row) => (row.hidden = !isConnector));
         this._hiddenForConnectorRows.forEach((row) => (row.hidden = isConnector));
         this._textOnlyRows.forEach((row) => (row.hidden = !isText));
+        this._lineOnlyRows.forEach((row) => (row.hidden = !isLine));
     }
 
     _setEnabled(enabled) {

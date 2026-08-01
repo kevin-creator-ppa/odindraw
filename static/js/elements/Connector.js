@@ -1,7 +1,6 @@
 import { Element } from "./Element.js";
 import { distanceToSegment } from "../utils/geometry.js";
-
-const ARROW_SIZE = 12;
+import { drawArrowhead, arrowheadSvgLines } from "./arrowhead.js";
 
 /** Ponto na borda do bbox, na direção de `towardPoint` a partir do centro — "desliza" pela borda conforme o objeto se move. */
 function edgeAnchorPoint(bounds, towardPoint) {
@@ -15,24 +14,6 @@ function edgeAnchorPoint(bounds, towardPoint) {
     const halfH = Math.max(bounds.height / 2, 0.001);
     const scale = Math.min(Math.abs(halfW / (dx || 1e-6)), Math.abs(halfH / (dy || 1e-6)));
     return { x: cx + dx * scale, y: cy + dy * scale };
-}
-
-function arrowheadWings(from, to) {
-    const angle = Math.atan2(to.y - from.y, to.x - from.x);
-    return [
-        { x: to.x - ARROW_SIZE * Math.cos(angle - Math.PI / 6), y: to.y - ARROW_SIZE * Math.sin(angle - Math.PI / 6) },
-        { x: to.x - ARROW_SIZE * Math.cos(angle + Math.PI / 6), y: to.y - ARROW_SIZE * Math.sin(angle + Math.PI / 6) },
-    ];
-}
-
-function drawArrowhead(ctx, from, to) {
-    const [wing1, wing2] = arrowheadWings(from, to);
-    ctx.beginPath();
-    ctx.moveTo(to.x, to.y);
-    ctx.lineTo(wing1.x, wing1.y);
-    ctx.moveTo(to.x, to.y);
-    ctx.lineTo(wing2.x, wing2.y);
-    ctx.stroke();
 }
 
 /**
@@ -186,20 +167,12 @@ export class Connector extends Element {
                   : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
         const arrowLines = [];
-        if (this.startArrow) arrowLines.push(...this._arrowheadSvgLines(this._nearPoint(start, end, "start"), start));
-        if (this.endArrow) arrowLines.push(...this._arrowheadSvgLines(this._nearPoint(start, end, "end"), end));
+        if (this.startArrow) arrowLines.push(...arrowheadSvgLines(this._nearPoint(start, end, "start"), start));
+        if (this.endArrow) arrowLines.push(...arrowheadSvgLines(this._nearPoint(start, end, "end"), end));
 
         return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
             <path d="${pathD}"${this.svgDashArray()} />
             ${arrowLines.join("\n            ")}
         </g>`;
-    }
-
-    _arrowheadSvgLines(from, to) {
-        const [wing1, wing2] = arrowheadWings(from, to);
-        return [
-            `<line x1="${to.x}" y1="${to.y}" x2="${wing1.x}" y2="${wing1.y}" />`,
-            `<line x1="${to.x}" y1="${to.y}" x2="${wing2.x}" y2="${wing2.y}" />`,
-        ];
     }
 }
