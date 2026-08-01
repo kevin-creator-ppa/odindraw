@@ -1,19 +1,26 @@
 const EXPORT_PADDING = 40;
 const EMPTY_SCENE_BOUNDS = { x: 0, y: 0, width: 800, height: 600 };
 
-/** Bounding box (mundo) de todos os elementos visíveis, com um retângulo padrão para cena vazia. */
-export function computeSceneBounds(scene) {
-    const visible = scene.objects.filter((el) => el.visible);
-    if (visible.length === 0) return { ...EMPTY_SCENE_BOUNDS };
+/** Bounding box (mundo) de um conjunto de elementos, com um retângulo padrão se a lista estiver vazia. */
+export function computeElementsBounds(elements, scene) {
+    if (elements.length === 0) return { ...EMPTY_SCENE_BOUNDS };
 
-    visible.forEach((el) => el.beforeHitTest(scene));
+    elements.forEach((el) => el.beforeHitTest(scene));
 
-    const left = Math.min(...visible.map((el) => el.x));
-    const top = Math.min(...visible.map((el) => el.y));
-    const right = Math.max(...visible.map((el) => el.x + el.width));
-    const bottom = Math.max(...visible.map((el) => el.y + el.height));
+    const left = Math.min(...elements.map((el) => el.x));
+    const top = Math.min(...elements.map((el) => el.y));
+    const right = Math.max(...elements.map((el) => el.x + el.width));
+    const bottom = Math.max(...elements.map((el) => el.y + el.height));
 
     return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/** Bounding box (mundo) de todos os elementos visíveis, com um retângulo padrão para cena vazia. */
+export function computeSceneBounds(scene) {
+    return computeElementsBounds(
+        scene.objects.filter((el) => el.visible),
+        scene
+    );
 }
 
 /** Área de exportação (bounds + padding) e o deslocamento para trazê-la à origem (0,0). */

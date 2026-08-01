@@ -14,18 +14,21 @@ import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
 import { HistoryManager } from "./managers/HistoryManager.js";
-import { duplicateSelected, deleteSelected } from "./managers/objectActions.js";
+import { duplicateSelected, deleteSelected, groupSelected, ungroupSelected } from "./managers/objectActions.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { Minimap } from "./ui/Minimap.js";
 import { ContextMenu } from "./ui/ContextMenu.js";
+import { ShortcutsModal } from "./ui/ShortcutsModal.js";
 import { TextEditor } from "./ui/TextEditor.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
-import { computeSceneBounds } from "./io/svgBuilder.js";
+import { computeSceneBounds, computeElementsBounds } from "./io/svgBuilder.js";
+import { extractStyle, applyStyle } from "./managers/styleClipboard.js";
+import { copySelection, pasteClipboard } from "./managers/clipboard.js";
 import { clamp } from "./utils/geometry.js";
 import { applyIcons } from "./ui/icons.js";
 import { SelectTool } from "./tools/SelectTool.js";
@@ -36,6 +39,9 @@ import { EllipseTool } from "./tools/EllipseTool.js";
 import { CircleTool } from "./tools/CircleTool.js";
 import { DiamondTool } from "./tools/DiamondTool.js";
 import { TriangleTool } from "./tools/TriangleTool.js";
+import { HexagonTool } from "./tools/HexagonTool.js";
+import { CylinderTool } from "./tools/CylinderTool.js";
+import { CloudTool } from "./tools/CloudTool.js";
 import { LineTool } from "./tools/LineTool.js";
 import { ArrowTool } from "./tools/ArrowTool.js";
 import { OrthogonalLineTool } from "./tools/OrthogonalLineTool.js";
@@ -46,6 +52,9 @@ import { Rectangle } from "./elements/Rectangle.js";
 import { Ellipse } from "./elements/Ellipse.js";
 import { Diamond } from "./elements/Diamond.js";
 import { Triangle } from "./elements/Triangle.js";
+import { Hexagon } from "./elements/Hexagon.js";
+import { Cylinder } from "./elements/Cylinder.js";
+import { Cloud } from "./elements/Cloud.js";
 import { Line } from "./elements/Line.js";
 import { Arrow } from "./elements/Arrow.js";
 import { OrthogonalLine } from "./elements/OrthogonalLine.js";
@@ -172,6 +181,9 @@ function initCanvasEngine() {
             new CircleTool(),
             new DiamondTool(),
             new TriangleTool(),
+            new HexagonTool(),
+            new CylinderTool(),
+            new CloudTool(),
             new LineTool(),
             new ArrowTool(),
             new OrthogonalLineTool(),
@@ -202,7 +214,19 @@ function initCanvasEngine() {
 
 const ZOOM_FIT_PADDING = 60;
 
-function initZoomControls({ scene, camera, renderer, eventBus }) {
+/** Centraliza a câmera em `bounds`, com zoom máximo que caiba na tela (respeitando o padding e os limites de zoom). */
+function fitCameraToBounds(camera, renderer, bounds) {
+    const scaleX = (renderer.width - ZOOM_FIT_PADDING * 2) / Math.max(bounds.width, 1);
+    const scaleY = (renderer.height - ZOOM_FIT_PADDING * 2) / Math.max(bounds.height, 1);
+    camera.zoom = clamp(Math.min(scaleX, scaleY), camera.minZoom, camera.maxZoom);
+
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+    camera.offsetX = renderer.width / 2 - centerX * camera.zoom;
+    camera.offsetY = renderer.height / 2 - centerY * camera.zoom;
+}
+
+function initZoomControls({ scene, camera, renderer, eventBus, selectionManager }) {
     const zoomLevelEl = document.querySelector("[data-zoom-level]");
 
     const updateZoomLabel = () => {
@@ -221,19 +245,15 @@ function initZoomControls({ scene, camera, renderer, eventBus }) {
         eventBus.emit("camera:change");
     });
 
+    /** Com seleção ativa, ajusta só a ela; senão, ajusta a cena inteira (comportamento de sempre). */
     document.querySelector('[data-action="zoom-fit"]').addEventListener("click", () => {
+        const selected = selectionManager.getSelected();
         if (scene.objects.length === 0) {
             camera.reset();
+        } else if (selected.length > 0) {
+            fitCameraToBounds(camera, renderer, computeElementsBounds(selected, scene));
         } else {
-            const bounds = computeSceneBounds(scene);
-            const scaleX = (renderer.width - ZOOM_FIT_PADDING * 2) / Math.max(bounds.width, 1);
-            const scaleY = (renderer.height - ZOOM_FIT_PADDING * 2) / Math.max(bounds.height, 1);
-            camera.zoom = clamp(Math.min(scaleX, scaleY), camera.minZoom, camera.maxZoom);
-
-            const centerX = bounds.x + bounds.width / 2;
-            const centerY = bounds.y + bounds.height / 2;
-            camera.offsetX = renderer.width / 2 - centerX * camera.zoom;
-            camera.offsetY = renderer.height / 2 - centerY * camera.zoom;
+            fitCameraToBounds(camera, renderer, computeSceneBounds(scene));
         }
         renderer.markDirty();
         eventBus.emit("camera:change");
@@ -347,6 +367,15 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
             case "triangle":
                 addAndSelect(new Triangle(normalizeShapeBounds(start, end)));
                 break;
+            case "hexagon":
+                addAndSelect(new Hexagon(normalizeShapeBounds(start, end)));
+                break;
+            case "cylinder":
+                addAndSelect(new Cylinder(normalizeShapeBounds(start, end)));
+                break;
+            case "cloud":
+                addAndSelect(new Cloud(normalizeShapeBounds(start, end)));
+                break;
             case "line":
                 addAndSelect(
                     createLineOrConnector({ start, end, startObjectId, endObjectId, routeType: "straight" })
@@ -449,6 +478,16 @@ function initObjectShortcuts(engine) {
             return;
         }
 
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "g") {
+            event.preventDefault();
+            if (event.shiftKey) {
+                ungroupSelected(engine);
+            } else {
+                groupSelected(engine);
+            }
+            return;
+        }
+
         if (event.key === "Escape") {
             if (engine.selectionManager.getSelected().length > 0) {
                 engine.selectionManager.clear();
@@ -489,33 +528,49 @@ function initNudgeShortcuts(engine) {
     });
 }
 
-/** Ctrl/Cmd+C copia a seleção pra um clipboard em memória; Ctrl/Cmd+V cola clones deslocados (+20,+20), selecionando-os. */
+/** Ctrl/Cmd+C copia a seleção; Ctrl/Cmd+V cola (ver managers/clipboard.js — compartilhado com o menu de contexto). */
 function initClipboardShortcuts(engine) {
     const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
-    let clipboard = [];
 
     window.addEventListener("keydown", (event) => {
         if (EDITABLE_TAGS.has(event.target.tagName)) return;
-        if (!(event.ctrlKey || event.metaKey)) return;
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
         const key = event.key.toLowerCase();
 
         if (key === "c") {
-            const selected = engine.selectionManager.getSelected();
-            if (selected.length === 0) return;
-            clipboard = selected.map((el) => el.clone());
+            copySelection(engine.selectionManager);
+            return;
+        }
+        if (key === "v") {
+            event.preventDefault();
+            pasteClipboard(engine);
+        }
+    });
+}
+
+/** Ctrl/Cmd+Alt+C copia o estilo (cor/traço/fonte/setas) do elemento selecionado; Ctrl/Cmd+Alt+V aplica em todos os selecionados. */
+function initFormatPainterShortcuts(engine) {
+    const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+    let copiedStyle = null;
+
+    window.addEventListener("keydown", (event) => {
+        if (EDITABLE_TAGS.has(event.target.tagName)) return;
+        if (!(event.ctrlKey || event.metaKey) || !event.altKey) return;
+        const key = event.key.toLowerCase();
+
+        if (key === "c") {
+            const [element] = engine.selectionManager.getSelected();
+            if (!element) return;
+            copiedStyle = extractStyle(element);
             return;
         }
 
         if (key === "v") {
-            if (clipboard.length === 0) return;
+            if (!copiedStyle) return;
+            const selected = engine.selectionManager.getSelected();
+            if (selected.length === 0) return;
             event.preventDefault();
-            clipboard = clipboard.map((el) => {
-                const copy = el.clone();
-                copy.translate(20, 20);
-                engine.scene.addObject(copy);
-                return copy;
-            });
-            engine.selectionManager.selectMultiple(clipboard);
+            selected.forEach((el) => applyStyle(el, copiedStyle));
             engine.renderer.markDirty();
             engine.historyManager?.pushSnapshot();
         }
@@ -605,6 +660,7 @@ function init() {
     initObjectShortcuts(engine);
     initNudgeShortcuts(engine);
     initClipboardShortcuts(engine);
+    initFormatPainterShortcuts(engine);
     initFileShortcuts(engine);
     initHistoryControls(engine);
     initBottomToolbarActions(engine);
@@ -613,6 +669,7 @@ function init() {
     new LibraryPanel(engine);
     new Minimap(engine);
     new ContextMenu(engine);
+    new ShortcutsModal();
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;

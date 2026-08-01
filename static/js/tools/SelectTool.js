@@ -118,12 +118,16 @@ export class SelectTool extends Tool {
 
         const shiftKey = Boolean(event?.shiftKey);
         const target = context.scene.getObjectAtPoint(point);
+        const groupMembers = this._groupMembers(context, target);
 
         if (target) {
             if (shiftKey) {
-                context.selectionManager.toggle(target);
-            } else if (!context.selectionManager.isSelected(target)) {
-                context.selectionManager.select(target);
+                const next = new Set(context.selectionManager.getSelected());
+                const anySelected = groupMembers.some((el) => next.has(el));
+                groupMembers.forEach((el) => (anySelected ? next.delete(el) : next.add(el)));
+                context.selectionManager.selectMultiple([...next]);
+            } else if (!groupMembers.every((el) => context.selectionManager.isSelected(el))) {
+                context.selectionManager.selectMultiple(groupMembers);
             }
 
             const selected = context.selectionManager.getSelected();
@@ -301,12 +305,15 @@ export class SelectTool extends Tool {
 
         if (this._marquee) {
             const rect = this._marqueeRect();
-            const hits = context.scene.objects.filter((el) => this._intersects(rect, el.getBounds()));
-            if (hits.length > 0) {
+            const direct = context.scene.objects.filter((el) => this._intersects(rect, el.getBounds()));
+            const hits = new Set(direct);
+            direct.forEach((el) => this._groupMembers(context, el).forEach((member) => hits.add(member)));
+            const hitList = [...hits];
+            if (hitList.length > 0) {
                 if (this._marquee.additive) {
-                    context.selectionManager.addMultiple(hits);
+                    context.selectionManager.addMultiple(hitList);
                 } else {
-                    context.selectionManager.selectMultiple(hits);
+                    context.selectionManager.selectMultiple(hitList);
                 }
             }
             this._marquee = null;
@@ -450,6 +457,13 @@ export class SelectTool extends Tool {
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
         ctx.restore();
+    }
+
+    /** Elemento(s) que um clique em `target` deve afetar: o grupo inteiro se ele pertencer a um, senão só ele mesmo (lista vazia se target for null). */
+    _groupMembers(context, target) {
+        if (!target) return [];
+        if (!target.groupId) return [target];
+        return context.scene.objects.filter((el) => el.groupId === target.groupId);
     }
 
     _singleSelection(context) {

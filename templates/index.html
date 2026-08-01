@@ -63,6 +63,7 @@
             </div>
 
             <div class="topbar__group topbar__group--right">
+                <button class="btn btn--icon" data-action="show-shortcuts" data-icon="help" title="Atalhos de teclado (?)"></button>
                 <button class="btn btn--icon" data-action="toggle-grid" data-icon="grid" data-active="true" title="Mostrar/ocultar grade"></button>
                 <button class="btn btn--icon" data-action="toggle-properties-panel" data-icon="panel-right" data-active="true" title="Mostrar/ocultar propriedades"></button>
             </div>
@@ -82,6 +83,9 @@
                 <button class="tool" data-tool="ellipse" data-icon="ellipse" title="Elipse (O)"></button>
                 <button class="tool" data-tool="diamond" data-icon="diamond" title="Losango (D)"></button>
                 <button class="tool" data-tool="triangle" data-icon="triangle" title="Triângulo"></button>
+                <button class="tool" data-tool="hexagon" data-icon="hexagon" title="Hexágono"></button>
+                <button class="tool" data-tool="cylinder" data-icon="cylinder" title="Cilindro (banco de dados)"></button>
+                <button class="tool" data-tool="cloud" data-icon="cloud" title="Nuvem"></button>
                 <button class="tool" data-tool="line" data-icon="line" title="Linha (L)"></button>
                 <button class="tool" data-tool="arrow" data-icon="arrow" title="Seta (A)"></button>
                 <button class="tool" data-tool="orthogonal-line" data-icon="orthogonal-line" title="Linha ortogonal"></button>
@@ -121,7 +125,7 @@
                 <button class="btn btn--icon" data-action="zoom-out" data-icon="zoom-out" title="Zoom -"></button>
                 <span class="zoom-level" data-zoom-level>100%</span>
                 <button class="btn btn--icon" data-action="zoom-in" data-icon="zoom-in" title="Zoom +"></button>
-                <button class="btn btn--icon" data-action="zoom-fit" data-icon="zoom-fit" title="Ajustar à tela"></button>
+                <button class="btn btn--icon" data-action="zoom-fit" data-icon="zoom-fit" title="Ajustar à tela (à seleção, se houver)"></button>
                 <span class="divider"></span>
                 <button class="btn btn--icon" data-action="quick-duplicate" data-icon="duplicate" title="Duplicar (Ctrl+D)"></button>
                 <button class="btn btn--icon" data-action="quick-delete" data-icon="trash" title="Excluir (Del)"></button>
@@ -288,6 +292,17 @@
                 </div>
             </div>
         </aside>
+    </div>
+
+    <div class="shortcuts-modal" data-shortcuts-modal hidden>
+        <div class="shortcuts-modal__backdrop" data-shortcuts-backdrop></div>
+        <div class="shortcuts-modal__panel">
+            <div class="shortcuts-modal__header">
+                <h2>Atalhos de teclado</h2>
+                <button class="btn btn--icon" data-action="close-shortcuts" data-icon="close" title="Fechar"></button>
+            </div>
+            <div class="shortcuts-modal__body" data-shortcuts-body></div>
+        </div>
     </div>
 
     <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>

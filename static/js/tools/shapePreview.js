@@ -59,6 +59,53 @@ export function drawTrianglePreview(ctx, rect) {
     });
 }
 
+export function drawHexagonPreview(ctx, rect) {
+    withPreviewStyle(ctx, () => {
+        const points = [
+            [rect.x + rect.width * 0.25, rect.y],
+            [rect.x + rect.width * 0.75, rect.y],
+            [rect.x + rect.width, rect.y + rect.height / 2],
+            [rect.x + rect.width * 0.75, rect.y + rect.height],
+            [rect.x + rect.width * 0.25, rect.y + rect.height],
+            [rect.x, rect.y + rect.height / 2],
+        ];
+        ctx.beginPath();
+        points.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+        ctx.closePath();
+        ctx.stroke();
+    });
+}
+
+export function drawCylinderPreview(ctx, rect) {
+    withPreviewStyle(ctx, () => {
+        const capH = Math.min(rect.height * 0.22, rect.height / 2 - 1, rect.width / 2);
+        const cx = rect.x + rect.width / 2;
+        ctx.beginPath();
+        ctx.moveTo(rect.x, rect.y + capH);
+        ctx.lineTo(rect.x, rect.y + rect.height - capH);
+        ctx.ellipse(cx, rect.y + rect.height - capH, rect.width / 2, capH, 0, Math.PI, 0, true);
+        ctx.lineTo(rect.x + rect.width, rect.y + capH);
+        ctx.ellipse(cx, rect.y + capH, rect.width / 2, capH, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    });
+}
+
+export function drawCloudPreview(ctx, rect) {
+    withPreviewStyle(ctx, () => {
+        ctx.beginPath();
+        ctx.ellipse(
+            rect.x + rect.width / 2,
+            rect.y + rect.height / 2,
+            Math.max(1, rect.width / 2),
+            Math.max(1, rect.height / 2),
+            0,
+            0,
+            Math.PI * 2
+        );
+        ctx.stroke();
+    });
+}
+
 function drawArrowhead(ctx, from, to) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
     const size = 10;

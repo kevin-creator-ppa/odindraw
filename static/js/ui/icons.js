@@ -26,6 +26,11 @@ export const ICONS = {
     ellipse: svg('<ellipse cx="12" cy="12" rx="9" ry="6"/>'),
     diamond: svg('<path d="M12 3l9 9-9 9-9-9z"/>'),
     triangle: svg('<path d="M12 4l9 16H3z"/>'),
+    hexagon: svg('<path d="M8 4h8l4 8-4 8H8l-4-8z"/>'),
+    cylinder: svg('<path d="M4 6a8 3 0 0 0 16 0M4 6a8 3 0 0 1 16 0v12a8 3 0 0 1-16 0z"/>'),
+    cloud: svg(
+        '<path d="M7 18a4 4 0 0 1-.5-7.97A5 5 0 0 1 16 8a4 4 0 0 1 1.5 9.9"/><path d="M7 18h10"/>'
+    ),
     line: svg('<line x1="5" y1="19" x2="19" y2="5"/>'),
     arrow: svg('<path d="M4 20L20 4M20 4h-7M20 4v7"/>'),
     "orthogonal-line": svg('<path d="M5 19h7V5h7"/>'),
@@ -73,6 +78,14 @@ export const ICONS = {
     "dash-motion": svg('<path d="M3 12h3M10 12h3M17 12h3"/>'),
     "flip-horizontal": svg('<path d="M12 3v18"/><path d="M18 7l3 3-3 3"/><path d="M6 7l-3 3 3 3"/>'),
     "flip-vertical": svg('<path d="M3 12h18"/><path d="M7 18l3 3 3-3"/><path d="M7 6l3-3 3 3"/>'),
+    group: svg('<rect x="3" y="3" width="11" height="11" rx="1.5"/><rect x="10" y="10" width="11" height="11" rx="1.5"/>'),
+    ungroup: svg(
+        '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>'
+    ),
+    "paint-bucket": svg(
+        '<path d="M11 3l8 8-8.5 8.5a2 2 0 0 1-2.8 0L4.5 16.3a2 2 0 0 1 0-2.8L11 6"/><path d="M4 12h13"/><circle cx="19" cy="18" r="2.3"/>'
+    ),
+    help: svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.7"/><path d="M12 17.5v.1"/>'),
 };
 
 /** Injeta o SVG correspondente em todo elemento `[data-icon]` da página. */

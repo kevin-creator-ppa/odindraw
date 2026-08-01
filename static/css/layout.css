@@ -195,6 +195,15 @@
     background: var(--bg-hover);
 }
 
+.menu-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.menu-item:disabled:hover {
+    background: transparent;
+}
+
 .menu-item__icon {
     display: flex;
     color: var(--text-secondary);
@@ -700,6 +709,85 @@
     white-space: pre-wrap;
     word-break: break-word;
     background: color-mix(in srgb, var(--bg-panel) 85%, transparent);
+}
+
+.shortcuts-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shortcuts-modal[hidden] {
+    display: none;
+}
+
+.shortcuts-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.shortcuts-modal__panel {
+    position: relative;
+    width: min(560px, 92vw);
+    max-height: 82vh;
+    overflow-y: auto;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.shortcuts-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+}
+
+.shortcuts-modal__header h2 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.shortcuts-modal__body {
+    padding: 8px 18px 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 24px;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12.5px;
+}
+
+.shortcut-row span:first-child {
+    color: var(--text-primary);
+}
+
+.shortcut-row kbd {
+    flex: none;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .context-menu {
