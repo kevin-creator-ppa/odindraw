@@ -1,10 +1,10 @@
 /**
  * Bootstrap da aplicação.
  *
- * Etapa 8 — exportação: PNG e SVG são gerados 100% no cliente (canvas
- * offscreen / string SVG); PDF é gerado no backend a partir do mesmo
- * SVG (svglib + reportlab), mantendo o frontend livre de bibliotecas
- * pesadas de geração de PDF.
+ * Etapa 9 — biblioteca de componentes: painel flutuante com os
+ * estênceis de Redes/Fluxograma/Formas (ícones vetoriais originais,
+ * não copiados de nenhum produto específico), com busca, favoritos e
+ * colocação no canvas por clique ou drag-and-drop.
  */
 
 import { EventBus } from "./core/EventBus.js";
@@ -17,6 +17,7 @@ import { SelectionManager } from "./managers/SelectionManager.js";
 import { duplicateSelected, deleteSelected } from "./managers/objectActions.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
+import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
@@ -381,6 +382,7 @@ function init() {
     initFileShortcuts(engine);
     new PropertiesPanel(engine);
     new FileMenu(engine);
+    new LibraryPanel(engine);
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;

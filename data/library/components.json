@@ -1,0 +1,47 @@
+{
+  "categories": [
+    {
+      "id": "network",
+      "name": "Redes",
+      "items": [
+        { "id": "router", "name": "Roteador" },
+        { "id": "switch", "name": "Switch" },
+        { "id": "firewall", "name": "Firewall" },
+        { "id": "server", "name": "Servidor" },
+        { "id": "rack", "name": "Rack" },
+        { "id": "ap-wifi", "name": "AP Wi-Fi" },
+        { "id": "computer", "name": "Computador" },
+        { "id": "notebook", "name": "Notebook" },
+        { "id": "printer", "name": "Impressora" },
+        { "id": "internet", "name": "Internet" },
+        { "id": "cloud", "name": "Cloud" },
+        { "id": "datacenter", "name": "Datacenter" }
+      ]
+    },
+    {
+      "id": "flowchart",
+      "name": "Fluxograma",
+      "items": [
+        { "id": "process", "name": "Processo" },
+        { "id": "decision", "name": "Decisão" },
+        { "id": "input-output", "name": "Entrada" },
+        { "id": "document", "name": "Documento" },
+        { "id": "database", "name": "Banco de dados" },
+        { "id": "connector", "name": "Conector" }
+      ]
+    },
+    {
+      "id": "shapes",
+      "name": "Formas",
+      "items": [
+        { "id": "rectangle", "name": "Retângulo" },
+        { "id": "square", "name": "Quadrado" },
+        { "id": "diamond", "name": "Losango" },
+        { "id": "hexagon", "name": "Hexágono" },
+        { "id": "triangle", "name": "Triângulo" },
+        { "id": "pentagon", "name": "Pentágono" },
+        { "id": "star", "name": "Estrela" }
+      ]
+    }
+  ]
+}

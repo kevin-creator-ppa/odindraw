@@ -72,6 +72,21 @@
                 <button class="tool" data-tool="freehand" title="Desenho livre (P)">&#9998;</button>
                 <button class="tool" data-tool="eraser" title="Borracha (E)">&#9003;</button>
             </div>
+            <span class="divider divider--horizontal"></span>
+            <div class="tool-group">
+                <button class="tool" data-action="toggle-library" title="Biblioteca de componentes">&#9638;</button>
+            </div>
+        </aside>
+
+        <!-- Painel flutuante da biblioteca de componentes -->
+        <aside class="library-panel" data-library-panel hidden>
+            <div class="library-panel__header">
+                <input type="search" class="library-panel__search" placeholder="Buscar componente…" data-library-search>
+                <button class="btn btn--icon" data-action="close-library" title="Fechar">&times;</button>
+            </div>
+            <div class="library-panel__body" data-library-body>
+                <p class="dropdown__empty">Carregando…</p>
+            </div>
         </aside>
 
         <!-- Canvas area -->
