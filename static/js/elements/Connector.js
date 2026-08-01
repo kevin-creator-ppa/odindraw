@@ -1,6 +1,6 @@
 import { Element } from "./Element.js";
-import { distanceToSegment } from "../utils/geometry.js";
 import { drawArrowhead, arrowheadSvgLines } from "./arrowhead.js";
+import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from "./routeGeometry.js";
 
 /** Ponto na borda do bbox, na direção de `towardPoint` a partir do centro — "desliza" pela borda conforme o objeto se move. */
 function edgeAnchorPoint(bounds, towardPoint) {
@@ -21,7 +21,8 @@ function edgeAnchorPoint(bounds, towardPoint) {
  * endObjectId), a ponta correspondente é recalculada a cada render a
  * partir da posição atual do objeto — desliza pela borda dele, na
  * direção da outra ponta — em vez de usar um ponto fixo. Uma ponta sem
- * objeto associado usa startPoint/endPoint (fixo).
+ * objeto associado usa startPoint/endPoint (fixo). A geometria da rota
+ * (reta/ortogonal/curva) é compartilhada com Line via routeGeometry.js.
  */
 export class Connector extends Element {
     constructor({
@@ -88,14 +89,7 @@ export class Connector extends Element {
     }
 
     containsPoint(point, tolerance = 6) {
-        const start = this._resolvedStart;
-        const end = this._resolvedEnd;
-        if (this.routeType === "orthogonal") {
-            const corner = { x: end.x, y: start.y };
-            return Math.min(distanceToSegment(point, start, corner), distanceToSegment(point, corner, end)) <= tolerance;
-        }
-        // Curva aproximada pela reta entre os pontos — suficiente para clique/seleção.
-        return distanceToSegment(point, start, end) <= tolerance;
+        return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance);
     }
 
     render(ctx, camera, scene) {
@@ -105,42 +99,10 @@ export class Connector extends Element {
 
         ctx.save();
         this.applyStyle(ctx);
-        this._drawRoute(ctx, a, b);
-        if (this.startArrow) drawArrowhead(ctx, this._nearPoint(a, b, "start"), a);
-        if (this.endArrow) drawArrowhead(ctx, this._nearPoint(a, b, "end"), b);
+        drawRoutePath(ctx, a, b, this.routeType);
+        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start"), a);
+        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end"), b);
         ctx.restore();
-    }
-
-    /**
-     * Ponto adjacente ao início/fim ao longo da rota (não o outro extremo),
-     * usado só para calcular o ângulo da seta — em rotas ortogonais/curvas
-     * a direção real no bico é a do último trecho, não a linha reta entre
-     * os dois extremos.
-     */
-    _nearPoint(a, b, which) {
-        if (this.routeType === "orthogonal") return { x: b.x, y: a.y };
-        if (this.routeType === "curved") {
-            const midX = (a.x + b.x) / 2;
-            return { x: midX, y: which === "start" ? a.y : b.y };
-        }
-        return which === "start" ? b : a;
-    }
-
-    _drawRoute(ctx, a, b) {
-        ctx.beginPath();
-        if (this.routeType === "orthogonal") {
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, a.y);
-            ctx.lineTo(b.x, b.y);
-        } else if (this.routeType === "curved") {
-            const midX = (a.x + b.x) / 2;
-            ctx.moveTo(a.x, a.y);
-            ctx.bezierCurveTo(midX, a.y, midX, b.y, b.x, b.y);
-        } else {
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-        }
-        ctx.stroke();
     }
 
     serialize() {
@@ -159,19 +121,13 @@ export class Connector extends Element {
     toSVG() {
         const start = this._resolvedStart ?? this.startPoint;
         const end = this._resolvedEnd ?? this.endPoint;
-        const pathD =
-            this.routeType === "orthogonal"
-                ? `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`
-                : this.routeType === "curved"
-                  ? `M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}`
-                  : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
         const arrowLines = [];
-        if (this.startArrow) arrowLines.push(...arrowheadSvgLines(this._nearPoint(start, end, "start"), start));
-        if (this.endArrow) arrowLines.push(...arrowheadSvgLines(this._nearPoint(start, end, "end"), end));
+        if (this.startArrow) arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start"), start));
+        if (this.endArrow) arrowLines.push(...arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end"), end));
 
         return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
-            <path d="${pathD}"${this.svgDashArray()} />
+            <path d="${routeSvgPath(start, end, this.routeType)}"${this.svgDashArray()} />
             ${arrowLines.join("\n            ")}
         </g>`;
     }

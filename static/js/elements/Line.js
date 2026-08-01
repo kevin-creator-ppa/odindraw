@@ -1,16 +1,30 @@
 import { Element } from "./Element.js";
-import { distanceToSegment } from "../utils/geometry.js";
 import { drawArrowhead, arrowheadSvgLines } from "./arrowhead.js";
+import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from "./routeGeometry.js";
 
 /**
  * Elemento definido por dois pontos (x1,y1)-(x2,y2), não por um bounding
  * box com rotação. O bbox (x,y,width,height) herdado de Element existe
  * só para participar do culling/seleção por área; o desenho de fato usa
- * sempre os pontos. Seta em cada ponta é opcional e independente
- * (startArrow/endArrow) — Arrow.js só liga endArrow por padrão.
+ * sempre os pontos.
+ *
+ * `routeType` (reta/ortogonal/curva) e seta em cada ponta (startArrow/
+ * endArrow) são independentes e editáveis depois de criada — Arrow.js e
+ * OrthogonalLine.js só mudam os padrões (endArrow / routeType) pra
+ * combinar com a ferramenta que os cria.
  */
 export class Line extends Element {
-    constructor({ x1, y1, x2, y2, style, type = "line", startArrow = false, endArrow = false } = {}) {
+    constructor({
+        x1,
+        y1,
+        x2,
+        y2,
+        style,
+        type = "line",
+        startArrow = false,
+        endArrow = false,
+        routeType = "straight",
+    } = {}) {
         super(type, {
             x: Math.min(x1, x2),
             y: Math.min(y1, y2),
@@ -24,6 +38,7 @@ export class Line extends Element {
         this.y2 = y2;
         this.startArrow = startArrow;
         this.endArrow = endArrow;
+        this.routeType = routeType;
     }
 
     translate(dx, dy) {
@@ -54,21 +69,14 @@ export class Line extends Element {
         const b = camera.worldToScreen(this.x2, this.y2);
         ctx.save();
         this.applyStyle(ctx);
-        this.drawPath(ctx, a, b);
-        if (this.startArrow) drawArrowhead(ctx, b, a);
-        if (this.endArrow) drawArrowhead(ctx, a, b);
+        drawRoutePath(ctx, a, b, this.routeType);
+        if (this.startArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "start"), a);
+        if (this.endArrow) drawArrowhead(ctx, routeNearPoint(a, b, this.routeType, "end"), b);
         ctx.restore();
     }
 
-    drawPath(ctx, a, b) {
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-    }
-
     containsPoint(point, tolerance = 6) {
-        return distanceToSegment(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) <= tolerance;
+        return routeContainsPoint(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }, this.routeType, tolerance);
     }
 
     serialize() {
@@ -80,6 +88,7 @@ export class Line extends Element {
             y2: this.y2,
             startArrow: this.startArrow,
             endArrow: this.endArrow,
+            routeType: this.routeType,
         };
     }
 
@@ -87,12 +96,12 @@ export class Line extends Element {
         const start = { x: this.x1, y: this.y1 };
         const end = { x: this.x2, y: this.y2 };
         const arrowLines = [
-            ...(this.startArrow ? arrowheadSvgLines(end, start) : []),
-            ...(this.endArrow ? arrowheadSvgLines(start, end) : []),
+            ...(this.startArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "start"), start) : []),
+            ...(this.endArrow ? arrowheadSvgLines(routeNearPoint(start, end, this.routeType, "end"), end) : []),
         ].join("");
 
         return `<g fill="none" stroke="${this.style.stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
-            <line x1="${this.x1}" y1="${this.y1}" x2="${this.x2}" y2="${this.y2}" />
+            <path d="${routeSvgPath(start, end, this.routeType)}" />
             ${arrowLines}
         </g>`;
     }

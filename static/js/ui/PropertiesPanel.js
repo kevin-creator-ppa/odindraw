@@ -10,10 +10,11 @@ import { duplicateSelected, deleteSelected } from "../managers/objectActions.js"
  * usuário termina o gesto (`change`) — senão cada pixel de um arraste
  * de opacidade viraria um passo de undo.
  *
- * "Tipo de rota" só aparece para conectores; "Rotação" some para eles
- * (a posição do conector é sempre recalculada a partir dos objetos
- * ligados, rotação não se aplica). Fonte/tamanho/estilo/alinhamento só
- * aparecem para elementos de texto.
+ * "Tipo de rota" e "Setas" aparecem para qualquer elemento tipo linha
+ * (linha/seta/ortogonal/conector); "Rotação" some para eles (não se
+ * aplica — a forma é definida pelos dois pontos, não por um bbox
+ * rotacionado). Fonte/tamanho/estilo/alinhamento só aparecem para
+ * elementos de texto.
  */
 export class PropertiesPanel {
     constructor({ scene, selectionManager, renderer, eventBus, historyManager }) {
@@ -64,10 +65,9 @@ export class PropertiesPanel {
             ),
         ];
 
-        this._connectorOnlyRows = document.querySelectorAll("[data-connector-only]");
-        this._hiddenForConnectorRows = document.querySelectorAll("[data-hide-for-connector]");
         this._textOnlyRows = document.querySelectorAll("[data-text-only]");
         this._lineOnlyRows = document.querySelectorAll("[data-line-only]");
+        this._hiddenForLineRows = document.querySelectorAll("[data-hide-for-line]");
 
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected[0] ?? null));
@@ -269,13 +269,11 @@ export class PropertiesPanel {
     }
 
     _toggleTypeSpecificRows(element) {
-        const isConnector = element?.type === "connector";
         const isText = element?.type === "text";
         const isLine = ["line", "arrow", "orthogonal-line", "connector"].includes(element?.type);
-        this._connectorOnlyRows.forEach((row) => (row.hidden = !isConnector));
-        this._hiddenForConnectorRows.forEach((row) => (row.hidden = isConnector));
         this._textOnlyRows.forEach((row) => (row.hidden = !isText));
         this._lineOnlyRows.forEach((row) => (row.hidden = !isLine));
+        this._hiddenForLineRows.forEach((row) => (row.hidden = isLine));
     }
 
     _setEnabled(enabled) {
