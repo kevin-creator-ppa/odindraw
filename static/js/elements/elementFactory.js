@@ -46,5 +46,6 @@ export function elementFromJSON(data) {
     element.locked = data.locked ?? false;
     element.visible = data.visible ?? true;
     element.groupId = data.groupId ?? null;
+    element.layerId = data.layerId ?? null;
     return element;
 }

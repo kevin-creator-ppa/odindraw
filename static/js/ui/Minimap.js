@@ -79,7 +79,7 @@ export class Minimap {
 
         ctx.fillStyle = getComputedStyle(this.container).getPropertyValue("--border-color") || "#ccc";
         this.scene.objects.forEach((el) => {
-            if (!el.visible) return;
+            if (!this.scene.isElementVisible(el)) return;
             const b = el.getBounds();
             ctx.fillRect(
                 b.x * scale + offsetX,

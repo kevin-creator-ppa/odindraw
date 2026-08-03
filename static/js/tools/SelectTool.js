@@ -75,7 +75,7 @@ export class SelectTool extends Tool {
 
     onPointerDown(context, point, event) {
         const single = this._singleSelection(context);
-        if (single && !single.locked) {
+        if (single && !context.scene.isElementLocked(single)) {
             const screenPoint = context.camera.worldToScreen(point.x, point.y);
 
             if (LINE_TYPES.has(single.type)) {
@@ -132,7 +132,7 @@ export class SelectTool extends Tool {
 
             const selected = context.selectionManager.getSelected();
             this._dragTargets = selected
-                .filter((el) => !el.locked)
+                .filter((el) => !context.scene.isElementLocked(el))
                 .map((el) => ({ element: el, originXY: { x: el.x, y: el.y } }));
             this._dragPrimary =
                 this._dragTargets.find((entry) => entry.element === target) ?? this._dragTargets[0] ?? null;
@@ -211,7 +211,9 @@ export class SelectTool extends Tool {
         };
 
         const draggedSet = new Set(this._dragTargets.map((entry) => entry.element));
-        const candidates = context.scene.objects.filter((el) => el.visible !== false && !draggedSet.has(el));
+        const candidates = context.scene.objects.filter(
+            (el) => context.scene.isElementVisible(el) && !draggedSet.has(el)
+        );
         const snap = computeAlignmentSnap({ bounds: candidateBounds, candidates, zoom: context.camera.zoom });
 
         let targetX = rawTargetX;

@@ -18,6 +18,7 @@ import { duplicateSelected, deleteSelected, groupSelected, ungroupSelected } fro
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
+import { LayersPanel } from "./ui/LayersPanel.js";
 import { Minimap } from "./ui/Minimap.js";
 import { ContextMenu } from "./ui/ContextMenu.js";
 import { ShortcutsModal } from "./ui/ShortcutsModal.js";
@@ -437,7 +438,7 @@ function initTextEditing({ canvasArea, camera, scene, toolManager, textEditor })
         const rect = canvasArea.getBoundingClientRect();
         const worldPoint = camera.screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
         const hit = scene.getObjectAtPoint(worldPoint);
-        if (!hit || hit.locked) return;
+        if (!hit || scene.isElementLocked(hit)) return;
         if (hit.type !== "text" && !hit.textLabel) return;
 
         toolManager.setActiveTool("select");
@@ -511,7 +512,7 @@ function initNudgeShortcuts(engine) {
         const delta = NUDGE_KEYS[event.key];
         if (!delta) return;
 
-        const selected = engine.selectionManager.getSelected().filter((el) => !el.locked);
+        const selected = engine.selectionManager.getSelected().filter((el) => !engine.scene.isElementLocked(el));
         if (selected.length === 0) return;
         event.preventDefault();
 
@@ -667,6 +668,7 @@ function init() {
     new PropertiesPanel(engine);
     new FileMenu(engine);
     new LibraryPanel(engine);
+    new LayersPanel(engine);
     new Minimap(engine);
     new ContextMenu(engine);
     new ShortcutsModal();

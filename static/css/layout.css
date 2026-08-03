@@ -668,6 +668,136 @@
     color: var(--accent);
 }
 
+/* Painel de camadas */
+.layers-panel {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 280px;
+    max-height: min(420px, calc(100% - 24px));
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.layers-panel[hidden] {
+    display: none;
+}
+
+.layers-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 8px 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.layers-panel__title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.layers-panel__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.layer-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.layer-row:hover {
+    background: var(--bg-hover);
+}
+
+.layer-row--active {
+    border-color: var(--accent);
+    background: var(--bg-active);
+}
+
+.layer-row__icon-btn {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 0;
+}
+
+.layer-row__icon-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.layer-row__icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.layer-row__icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.layer-row__name {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
+.layer-row__name:hover,
+.layer-row__name:focus {
+    border-color: var(--border-color);
+    background: var(--bg-app);
+    outline: none;
+}
+
+.layers-panel__move-selection {
+    margin-top: 4px;
+    padding: 8px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.layers-panel__move-selection:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.layers-panel__move-selection:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* Canvas area */
 .canvas-area {
     grid-area: canvas;

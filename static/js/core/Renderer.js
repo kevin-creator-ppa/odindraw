@@ -97,8 +97,8 @@ export class Renderer {
         const viewport = this.camera.getViewportBounds(this.width, this.height);
         const visible = this.scene
             .getVisibleObjects(viewport)
-            .filter((el) => el.visible)
-            .sort((a, b) => a.zIndex - b.zIndex);
+            .filter((el) => this.scene.isElementVisible(el))
+            .sort((a, b) => this.scene.stackCompare(a, b));
 
         for (const element of visible) {
             element.render(ctx, this.camera, this.scene);

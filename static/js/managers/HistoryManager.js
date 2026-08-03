@@ -51,12 +51,18 @@ export class HistoryManager {
     }
 
     _snapshot() {
-        return this.scene.objects.map((el) => el.serialize());
+        return {
+            objects: this.scene.objects.map((el) => el.serialize()),
+            layers: this.scene.layers.map((l) => ({ ...l })),
+            activeLayerId: this.scene.activeLayerId,
+        };
     }
 
     _restore(snapshot) {
         this.scene.clear();
-        snapshot.forEach((raw) => {
+        this.scene.layers = snapshot.layers.map((l) => ({ ...l }));
+        this.scene.activeLayerId = snapshot.activeLayerId;
+        snapshot.objects.forEach((raw) => {
             const element = elementFromJSON(raw);
             if (element) this.scene.restoreObject(element);
         });
@@ -64,6 +70,7 @@ export class HistoryManager {
         this.renderer.markDirty();
         this.renderer.clearInteractive();
         this.eventBus.emit("selection:change", []);
+        this.eventBus.emit("layers:change");
     }
 
     getState() {

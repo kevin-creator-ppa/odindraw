@@ -50,6 +50,38 @@
         { "id": "pentagon", "name": "Pentágono" },
         { "id": "star", "name": "Estrela" }
       ]
+    },
+    {
+      "id": "uml",
+      "name": "UML",
+      "items": [
+        { "id": "uml-class", "name": "Classe" },
+        { "id": "uml-actor", "name": "Ator" },
+        { "id": "uml-interface", "name": "Interface" },
+        { "id": "uml-usecase", "name": "Caso de uso" },
+        { "id": "uml-note", "name": "Nota" }
+      ]
+    },
+    {
+      "id": "er",
+      "name": "Entidade-Relacionamento",
+      "items": [
+        { "id": "er-entity", "name": "Entidade" },
+        { "id": "er-attribute", "name": "Atributo" },
+        { "id": "er-relationship", "name": "Relacionamento" }
+      ]
+    },
+    {
+      "id": "cloud",
+      "name": "Nuvem (genérico)",
+      "items": [
+        { "id": "cloud-compute", "name": "Instância / Computação" },
+        { "id": "cloud-storage", "name": "Armazenamento" },
+        { "id": "cloud-database", "name": "Banco gerenciado" },
+        { "id": "cloud-lb", "name": "Load Balancer" },
+        { "id": "cloud-function", "name": "Função (Serverless)" },
+        { "id": "cloud-queue", "name": "Fila / Mensageria" }
+      ]
     }
   ]
 }

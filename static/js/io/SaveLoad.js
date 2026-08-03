@@ -29,6 +29,8 @@ export class SaveLoad {
                 offset_y: this.camera.offsetY,
                 grid_enabled: this.renderer.gridEnabled,
             },
+            layers: this.scene.layers.map((l) => ({ ...l })),
+            active_layer_id: this.scene.activeLayerId,
             objects,
             connections,
         };
@@ -76,6 +78,12 @@ export class SaveLoad {
 
     _applyData(data) {
         this.scene.clear();
+        if (Array.isArray(data.layers) && data.layers.length > 0) {
+            this.scene.layers = data.layers.map((l) => ({ ...l }));
+            this.scene.activeLayerId = this.scene.layers.some((l) => l.id === data.active_layer_id)
+                ? data.active_layer_id
+                : this.scene.layers[0].id;
+        }
         [...(data.objects ?? []), ...(data.connections ?? [])].forEach((raw) => {
             const element = elementFromJSON(raw);
             if (element) this.scene.restoreObject(element);
@@ -95,5 +103,6 @@ export class SaveLoad {
         this.eventBus.emit("camera:change");
         this.eventBus.emit("selection:change", []);
         this.eventBus.emit("diagram:change", { name: this.diagramName });
+        this.eventBus.emit("layers:change");
     }
 }

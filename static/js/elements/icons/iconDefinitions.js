@@ -7,6 +7,15 @@
  * tanto no canvas quanto no SVG exportado.
  */
 
+const DATABASE_CYLINDER = [
+    { type: "path", d: "M 15 25 A 35 10 0 0 0 85 25 A 35 10 0 0 0 15 25" },
+    { type: "line", x1: 15, y1: 25, x2: 15, y2: 75 },
+    { type: "line", x1: 85, y1: 25, x2: 85, y2: 75 },
+    { type: "path", d: "M 15 75 A 35 10 0 0 0 85 75" },
+];
+
+const OVAL_OUTLINE = [{ type: "path", d: "M 10 50 A 40 25 0 0 1 90 50 A 40 25 0 0 1 10 50 Z" }];
+
 const ROUTER_BASE = [
     { type: "rect", x: 10, y: 35, w: 80, h: 30 },
     { type: "path", d: "M 30 50 L 70 50 M 63 43 L 70 50 L 63 57" },
@@ -162,13 +171,86 @@ export const ICONS = {
     decision: [{ type: "polygon", points: [[50, 10], [90, 50], [50, 90], [10, 50]] }],
     "input-output": [{ type: "polygon", points: [[25, 20], [95, 20], [75, 80], [5, 80]] }],
     document: [{ type: "path", d: "M 10 15 L 90 15 L 90 75 Q 70 85 50 75 Q 30 65 10 75 Z" }],
-    database: [
-        { type: "path", d: "M 15 25 A 35 10 0 0 0 85 25 A 35 10 0 0 0 15 25" },
-        { type: "line", x1: 15, y1: 25, x2: 15, y2: 75 },
-        { type: "line", x1: 85, y1: 25, x2: 85, y2: 75 },
-        { type: "path", d: "M 15 75 A 35 10 0 0 0 85 75" },
-    ],
+    database: DATABASE_CYLINDER,
     connector: [{ type: "circle", cx: 50, cy: 50, r: 38 }],
+
+    // UML
+    "uml-class": [
+        { type: "rect", x: 15, y: 10, w: 70, h: 80 },
+        { type: "line", x1: 15, y1: 34, x2: 85, y2: 34 },
+        { type: "line", x1: 15, y1: 58, x2: 85, y2: 58 },
+    ],
+    "uml-actor": [
+        { type: "circle", cx: 50, cy: 20, r: 10 },
+        { type: "line", x1: 50, y1: 30, x2: 50, y2: 65 },
+        { type: "line", x1: 25, y1: 42, x2: 75, y2: 42 },
+        { type: "line", x1: 50, y1: 65, x2: 30, y2: 90 },
+        { type: "line", x1: 50, y1: 65, x2: 70, y2: 90 },
+    ],
+    "uml-interface": [
+        { type: "circle", cx: 50, cy: 55, r: 28 },
+        { type: "line", x1: 50, y1: 12, x2: 50, y2: 27 },
+    ],
+    "uml-usecase": OVAL_OUTLINE,
+    "uml-note": [
+        { type: "path", d: "M 15 10 L 70 10 L 85 25 L 85 90 L 15 90 Z" },
+        { type: "path", d: "M 70 10 L 70 25 L 85 25" },
+        { type: "line", x1: 25, y1: 45, x2: 75, y2: 45 },
+        { type: "line", x1: 25, y1: 60, x2: 75, y2: 60 },
+    ],
+
+    // Entidade-Relacionamento
+    "er-entity": [
+        { type: "rect", x: 10, y: 25, w: 80, h: 50 },
+        { type: "line", x1: 10, y1: 42, x2: 90, y2: 42 },
+    ],
+    "er-attribute": OVAL_OUTLINE,
+    "er-relationship": [{ type: "polygon", points: [[50, 10], [90, 50], [50, 90], [10, 50]] }],
+
+    // Nuvem (pictogramas genéricos, sem logo de nenhum provedor específico)
+    "cloud-compute": [
+        { type: "rect", x: 25, y: 25, w: 50, h: 50 },
+        { type: "rect", x: 40, y: 40, w: 20, h: 20 },
+        { type: "line", x1: 25, y1: 15, x2: 25, y2: 25 },
+        { type: "line", x1: 45, y1: 15, x2: 45, y2: 25 },
+        { type: "line", x1: 55, y1: 15, x2: 55, y2: 25 },
+        { type: "line", x1: 75, y1: 15, x2: 75, y2: 25 },
+        { type: "line", x1: 25, y1: 75, x2: 25, y2: 85 },
+        { type: "line", x1: 45, y1: 75, x2: 45, y2: 85 },
+        { type: "line", x1: 55, y1: 75, x2: 55, y2: 85 },
+        { type: "line", x1: 75, y1: 75, x2: 75, y2: 85 },
+        { type: "line", x1: 15, y1: 25, x2: 25, y2: 25 },
+        { type: "line", x1: 15, y1: 45, x2: 25, y2: 45 },
+        { type: "line", x1: 15, y1: 55, x2: 25, y2: 55 },
+        { type: "line", x1: 15, y1: 75, x2: 25, y2: 75 },
+        { type: "line", x1: 75, y1: 25, x2: 85, y2: 25 },
+        { type: "line", x1: 75, y1: 45, x2: 85, y2: 45 },
+        { type: "line", x1: 75, y1: 55, x2: 85, y2: 55 },
+        { type: "line", x1: 75, y1: 75, x2: 85, y2: 75 },
+    ],
+    "cloud-storage": [
+        { type: "line", x1: 15, y1: 12, x2: 85, y2: 12 },
+        { type: "path", d: "M 20 20 L 80 20 L 72 85 L 28 85 Z" },
+    ],
+    "cloud-database": DATABASE_CYLINDER,
+    "cloud-lb": [
+        { type: "circle", cx: 50, cy: 18, r: 9 },
+        { type: "line", x1: 50, y1: 27, x2: 50, y2: 50 },
+        { type: "line", x1: 20, y1: 50, x2: 80, y2: 50 },
+        { type: "line", x1: 20, y1: 50, x2: 20, y2: 68 },
+        { type: "line", x1: 50, y1: 50, x2: 50, y2: 68 },
+        { type: "line", x1: 80, y1: 50, x2: 80, y2: 68 },
+        { type: "rect", x: 12, y: 68, w: 16, h: 16 },
+        { type: "rect", x: 42, y: 68, w: 16, h: 16 },
+        { type: "rect", x: 72, y: 68, w: 16, h: 16 },
+    ],
+    "cloud-function": [{ type: "path", d: "M 55 8 L 25 55 L 45 55 L 40 92 L 78 42 L 55 42 Z", fill: true }],
+    "cloud-queue": [
+        { type: "rect", x: 10, y: 20, w: 26, h: 20 },
+        { type: "rect", x: 37, y: 20, w: 26, h: 20 },
+        { type: "rect", x: 64, y: 20, w: 26, h: 20 },
+        { type: "path", d: "M 10 55 L 90 55 M 78 47 L 90 55 L 78 63" },
+    ],
 
     // Formas
     rectangle: [{ type: "rect", x: 10, y: 20, w: 80, h: 60 }],

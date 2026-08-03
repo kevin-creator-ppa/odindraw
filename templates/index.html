@@ -99,6 +99,7 @@
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
                 <button class="tool" data-action="toggle-library" data-icon="library" title="Biblioteca de componentes"></button>
+                <button class="tool" data-action="toggle-layers" data-icon="layers" title="Camadas"></button>
             </div>
         </aside>
 
@@ -111,6 +112,16 @@
             <div class="library-panel__body" data-library-body>
                 <p class="dropdown__empty">Carregando…</p>
             </div>
+        </aside>
+
+        <!-- Painel flutuante de camadas -->
+        <aside class="layers-panel" data-layers-panel hidden>
+            <div class="layers-panel__header">
+                <span class="layers-panel__title">Camadas</span>
+                <button class="btn btn--icon" data-action="add-layer" data-icon="plus" title="Nova camada"></button>
+                <button class="btn btn--icon" data-action="close-layers" data-icon="close" title="Fechar"></button>
+            </div>
+            <div class="layers-panel__body" data-layers-body></div>
         </aside>
 
         <!-- Canvas area -->

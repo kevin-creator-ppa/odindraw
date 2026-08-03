@@ -39,6 +39,7 @@ export class Element {
         this.locked = false;
         this.visible = true;
         this.groupId = null;
+        this.layerId = null;
         this.style = { ...defaultStyle(), ...style };
     }
 
@@ -151,6 +152,7 @@ export class Element {
             locked: this.locked,
             visible: this.visible,
             groupId: this.groupId,
+            layerId: this.layerId,
             style: { ...this.style },
             ...(this.textLabel ? { textLabel: { ...this.textLabel } } : {}),
         };
