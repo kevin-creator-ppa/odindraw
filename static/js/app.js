@@ -14,11 +14,13 @@ import { InputController } from "./core/InputController.js";
 import { ToolManager } from "./managers/ToolManager.js";
 import { SelectionManager } from "./managers/SelectionManager.js";
 import { HistoryManager } from "./managers/HistoryManager.js";
+import { PageManager } from "./managers/PageManager.js";
 import { duplicateSelected, deleteSelected, groupSelected, ungroupSelected } from "./managers/objectActions.js";
 import { PropertiesPanel } from "./ui/PropertiesPanel.js";
 import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { LayersPanel } from "./ui/LayersPanel.js";
+import { PagesBar } from "./ui/PagesBar.js";
 import { Minimap } from "./ui/Minimap.js";
 import { ContextMenu } from "./ui/ContextMenu.js";
 import { ShortcutsModal } from "./ui/ShortcutsModal.js";
@@ -163,7 +165,8 @@ function initCanvasEngine() {
     const camera = new Camera();
     const renderer = new Renderer({ container: canvasArea, staticCanvas, interactiveCanvas, camera, scene });
     const selectionManager = new SelectionManager({ scene, eventBus });
-    const historyManager = new HistoryManager({ scene, renderer, selectionManager, eventBus });
+    const pageManager = new PageManager({ scene, camera, renderer, eventBus });
+    const historyManager = new HistoryManager({ pageManager, renderer, selectionManager, eventBus });
 
     const toolManager = new ToolManager({
         canvasArea,
@@ -195,7 +198,7 @@ function initCanvasEngine() {
     });
 
     const input = new InputController({ element: canvasArea, camera, renderer, eventBus, toolManager });
-    const saveLoad = new SaveLoad({ scene, camera, renderer, eventBus });
+    const saveLoad = new SaveLoad({ scene, pageManager, eventBus });
     const textEditor = new TextEditor({ canvasArea, camera, renderer, eventBus, historyManager, scene, selectionManager });
 
     return {
@@ -207,6 +210,7 @@ function initCanvasEngine() {
         toolManager,
         selectionManager,
         historyManager,
+        pageManager,
         input,
         saveLoad,
         textEditor,
@@ -669,6 +673,7 @@ function init() {
     new FileMenu(engine);
     new LibraryPanel(engine);
     new LayersPanel(engine);
+    new PagesBar(engine);
     new Minimap(engine);
     new ContextMenu(engine);
     new ShortcutsModal();

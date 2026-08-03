@@ -1,38 +1,26 @@
-import { elementFromJSON } from "../elements/elementFactory.js";
-
 /**
- * Serializa a Scene/Camera para o formato JSON persistido pelo backend
- * (routes/diagrams.py) e reconstrói o estado ao carregar. Conectores
- * (type: "connector") são separados em `connections` na exportação —
- * na memória eles continuam vivendo junto dos outros em scene.objects.
+ * Serializa o documento (todas as páginas do PageManager) para o
+ * formato JSON persistido pelo backend (routes/diagrams.py) e
+ * reconstrói o estado ao carregar. Diagramas salvos antes das páginas
+ * (versão 1.0, uma cena só no topo do JSON) continuam abrindo
+ * normalmente — viram um documento de página única.
  */
 export class SaveLoad {
-    constructor({ scene, camera, renderer, eventBus }) {
+    constructor({ scene, pageManager, eventBus }) {
         this.scene = scene;
-        this.camera = camera;
-        this.renderer = renderer;
+        this.pageManager = pageManager;
         this.eventBus = eventBus;
         this.currentId = null;
         this.diagramName = "Sem título";
     }
 
     serialize(name) {
-        const objects = this.scene.objects.filter((el) => el.type !== "connector").map((el) => el.serialize());
-        const connections = this.scene.objects.filter((el) => el.type === "connector").map((el) => el.serialize());
-
+        this.pageManager.captureActivePage();
         return {
-            version: "1.0",
+            version: "1.1",
             metadata: { name: name ?? this.diagramName },
-            canvas: {
-                zoom: this.camera.zoom,
-                offset_x: this.camera.offsetX,
-                offset_y: this.camera.offsetY,
-                grid_enabled: this.renderer.gridEnabled,
-            },
-            layers: this.scene.layers.map((l) => ({ ...l })),
-            active_layer_id: this.scene.activeLayerId,
-            objects,
-            connections,
+            pages: this.pageManager.pages.map((p) => ({ id: p.id, name: p.name, ...p.data })),
+            active_page_id: this.pageManager.activePageId,
         };
     }
 
@@ -69,40 +57,37 @@ export class SaveLoad {
     }
 
     newDiagram() {
-        this.scene.clear();
-        this.camera.reset();
+        this.pageManager.reset();
         this.currentId = null;
         this.diagramName = "Sem título";
         this._refresh();
     }
 
     _applyData(data) {
-        this.scene.clear();
-        if (Array.isArray(data.layers) && data.layers.length > 0) {
-            this.scene.layers = data.layers.map((l) => ({ ...l }));
-            this.scene.activeLayerId = this.scene.layers.some((l) => l.id === data.active_layer_id)
-                ? data.active_layer_id
-                : this.scene.layers[0].id;
+        if (Array.isArray(data.pages) && data.pages.length > 0) {
+            this.pageManager.loadPages(data.pages, data.active_page_id);
+        } else {
+            // Diagrama salvo antes das páginas (versão 1.0): vira um documento de página única.
+            this.pageManager.loadPages(
+                [
+                    {
+                        id: "page_1",
+                        name: "Página 1",
+                        canvas: data.canvas,
+                        layers: data.layers,
+                        active_layer_id: data.active_layer_id,
+                        objects: data.objects,
+                        connections: data.connections,
+                    },
+                ],
+                "page_1"
+            );
         }
-        [...(data.objects ?? []), ...(data.connections ?? [])].forEach((raw) => {
-            const element = elementFromJSON(raw);
-            if (element) this.scene.restoreObject(element);
-        });
-
-        this.camera.zoom = data.canvas?.zoom ?? 1;
-        this.camera.offsetX = data.canvas?.offset_x ?? 0;
-        this.camera.offsetY = data.canvas?.offset_y ?? 0;
-        this.renderer.setGridEnabled(data.canvas?.grid_enabled ?? true);
         this.diagramName = data.metadata?.name ?? "Sem título";
-
         this._refresh();
     }
 
     _refresh() {
-        this.renderer.markDirty();
-        this.eventBus.emit("camera:change");
-        this.eventBus.emit("selection:change", []);
         this.eventBus.emit("diagram:change", { name: this.diagramName });
-        this.eventBus.emit("layers:change");
     }
 }

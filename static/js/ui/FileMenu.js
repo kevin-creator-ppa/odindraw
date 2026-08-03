@@ -18,8 +18,17 @@ export class FileMenu {
         this._setName(saveLoad.diagramName);
     }
 
+    /** Considera tanto a página ativa (cena em memória) quanto as demais páginas já capturadas. */
+    _hasContent() {
+        const { scene, pageManager } = this.saveLoad;
+        if (scene.objects.length > 0) return true;
+        return pageManager.pages.some(
+            (page) => (page.data?.objects?.length ?? 0) > 0 || (page.data?.connections?.length ?? 0) > 0
+        );
+    }
+
     async _new() {
-        if (this.saveLoad.scene.objects.length > 0) {
+        if (this._hasContent()) {
             const confirmed = window.confirm("Descartar o diagrama atual e começar um novo?");
             if (!confirmed) return;
         }
