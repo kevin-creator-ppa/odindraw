@@ -30,7 +30,8 @@ function edgeAnchorPoint(bounds, towardPoint) {
  * partir da posição atual do objeto — desliza pela borda dele, na
  * direção da outra ponta — em vez de usar um ponto fixo. Uma ponta sem
  * objeto associado usa startPoint/endPoint (fixo). A geometria da rota
- * (reta/ortogonal/curva) é compartilhada com Line via routeGeometry.js.
+ * (reta/ortogonal/curva + waypoints) é compartilhada com Line via
+ * routeGeometry.js.
  */
 export class Connector extends Element {
     constructor({
@@ -43,7 +44,8 @@ export class Connector extends Element {
         endArrow,
         startArrowType,
         endArrowType,
-        bend = null,
+        waypoints,
+        bend = null, // formato antigo (um único ponto) — migra pra waypoints=[bend] se não vier `waypoints`
         style,
     } = {}) {
         super("connector", {
@@ -60,7 +62,7 @@ export class Connector extends Element {
         this.routeType = routeType;
         this.startArrowType = normalizeArrowType(startArrowType ?? startArrow, "none");
         this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "open");
-        this.bend = bend;
+        this.waypoints = waypoints ?? (bend ? [bend] : []);
         this._resolvedStart = startPoint;
         this._resolvedEnd = endPoint;
     }
@@ -94,7 +96,7 @@ export class Connector extends Element {
         super.translate(dx, dy);
         if (!this.startObjectId) this.startPoint = { x: this.startPoint.x + dx, y: this.startPoint.y + dy };
         if (!this.endObjectId) this.endPoint = { x: this.endPoint.x + dx, y: this.endPoint.y + dy };
-        if (this.bend) this.bend = { x: this.bend.x + dx, y: this.bend.y + dy };
+        this.waypoints = this.waypoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
     }
 
     beforeHitTest(scene) {
@@ -102,20 +104,20 @@ export class Connector extends Element {
     }
 
     containsPoint(point, tolerance = 6) {
-        return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance, this.bend);
+        return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance, this.waypoints);
     }
 
     render(ctx, camera, scene) {
         const { start, end } = this.resolveEndpoints(scene);
         const a = camera.worldToScreen(start.x, start.y);
         const b = camera.worldToScreen(end.x, end.y);
-        const bend = this.bend ? camera.worldToScreen(this.bend.x, this.bend.y) : null;
+        const waypoints = this.waypoints.map((p) => camera.worldToScreen(p.x, p.y));
 
         ctx.save();
         this.applyStyle(ctx);
-        drawRoutePath(ctx, a, b, this.routeType, bend);
-        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", bend), a);
-        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", bend), b);
+        drawRoutePath(ctx, a, b, this.routeType, waypoints);
+        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
+        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);
         ctx.restore();
     }
 
@@ -129,7 +131,7 @@ export class Connector extends Element {
             routeType: this.routeType,
             startArrowType: this.startArrowType,
             endArrowType: this.endArrowType,
-            bend: this.bend,
+            waypoints: this.waypoints,
         };
     }
 
@@ -138,12 +140,21 @@ export class Connector extends Element {
         const end = this._resolvedEnd ?? this.endPoint;
         const stroke = this.resolvedStroke();
         const markers =
-            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.bend), start, stroke) +
-            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.bend), end, stroke);
+            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.waypoints), start, stroke) +
+            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.waypoints), end, stroke);
 
         return `<g fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
-            <path d="${routeSvgPath(start, end, this.routeType, this.bend)}"${this.svgDashArray()} />
+            <path d="${routeSvgPath(start, end, this.routeType, this.waypoints)}"${this.svgDashArray()} />
             ${markers}
         </g>`;
+    }
+
+    /** Sobrescreve Element.clone(): sem isso, a cópia compartilharia os mesmos objetos de ponto (startPoint/endPoint/waypoints) do original. */
+    clone() {
+        const copy = super.clone();
+        copy.startPoint = { ...this.startPoint };
+        copy.endPoint = { ...this.endPoint };
+        copy.waypoints = this.waypoints.map((p) => ({ ...p }));
+        return copy;
     }
 }

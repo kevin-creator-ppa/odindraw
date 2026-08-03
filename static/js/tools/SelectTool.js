@@ -18,10 +18,13 @@ const MIN_RESIZE_SIZE = 10;
  * (para poder desbloquear) mas não arrastáveis.
  *
  * Alças no único elemento selecionado (todas cientes da rotação atual):
- *  - Linha/seta/ortogonal/conector: 2 alças nas pontas — arrastar
- *    reshape aquele extremo (num Connector, solta sobre outro objeto
- *    religa; solta em área vazia desanexa) — e uma alça quadrada no meio
- *    da rota — arrastar muda a trajetória (bend) sem mexer nas pontas.
+ *  - Linha/seta/ortogonal/conector: 2 alças redondas nas pontas —
+ *    arrastar reshape aquele extremo (num Connector, solta sobre outro
+ *    objeto religa; solta em área vazia desanexa); alças quadradas em
+ *    cada waypoint existente — arrastar reposiciona, soltar sem arrastar
+ *    remove o waypoint; e um ponto translúcido no meio de cada segmento
+ *    (inclusive quando não há waypoint nenhum ainda) — arrastar cria um
+ *    waypoint novo ali, estilo draw.io.
  *  - Formas com área (retângulo, elipse, texto, traço livre,
  *    componente...): alças redondas nas bordas (N/E/S/W) — arrastar
  *    cria um Connector saindo dali; alças quadradas nos cantos (só em
@@ -47,7 +50,7 @@ export class SelectTool extends Tool {
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
-        this._bendDrag = null;
+        this._waypointDrag = null;
         this._marquee = null;
         this._activeGuides = null;
         this._unsubscribeCamera = null;
@@ -67,7 +70,7 @@ export class SelectTool extends Tool {
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
-        this._bendDrag = null;
+        this._waypointDrag = null;
         this._marquee = null;
         this._activeGuides = null;
         context.renderer.clearInteractive();
@@ -85,8 +88,20 @@ export class SelectTool extends Tool {
                     return;
                 }
 
-                if (this._hitTestBendHandle(context, single, screenPoint)) {
-                    this._bendDrag = { element: single };
+                const waypointHit = this._hitTestWaypointHandle(context, single, screenPoint);
+                if (waypointHit) {
+                    this._waypointDrag = { element: single, index: waypointHit.index, isNew: false, moved: false };
+                    return;
+                }
+
+                const addHit = this._hitTestAddWaypointHandle(context, single, screenPoint);
+                if (addHit) {
+                    single.waypoints = [
+                        ...single.waypoints.slice(0, addHit.insertIndex),
+                        addHit.worldPoint,
+                        ...single.waypoints.slice(addHit.insertIndex),
+                    ];
+                    this._waypointDrag = { element: single, index: addHit.insertIndex, isNew: true, moved: false };
                     return;
                 }
             } else {
@@ -172,8 +187,12 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (this._bendDrag) {
-            this._bendDrag.element.bend = this._snapToGrid(context, point);
+        if (this._waypointDrag) {
+            const { element, index } = this._waypointDrag;
+            const snapped = this._snapToGrid(context, point);
+            const prev = element.waypoints[index];
+            if (!prev || prev.x !== snapped.x || prev.y !== snapped.y) this._waypointDrag.moved = true;
+            element.waypoints[index] = snapped;
             context.renderer.markDirty();
             this._redrawOverlay(context);
             return;
@@ -287,9 +306,13 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (this._bendDrag) {
+        if (this._waypointDrag) {
+            const { element, index, isNew, moved } = this._waypointDrag;
+            if (!isNew && !moved) element.waypoints.splice(index, 1);
+            context.renderer.markDirty();
             context.historyManager?.pushSnapshot();
-            this._bendDrag = null;
+            this._waypointDrag = null;
+            this._redrawOverlay(context);
             return;
         }
 
@@ -510,17 +533,43 @@ export class SelectTool extends Tool {
         });
     }
 
-    /** Ponto (mundo) da alça de trajetória: o bend customizado, se houver, senão o meio "natural" da rota atual. */
-    _bendHandleWorldPoint(context, element) {
-        if (element.bend) return element.bend;
+    /** Posições (mundo) onde arrastar cria um waypoint novo: o meio de cada segmento já existente (start→wp1→...→end), ou o meio/cotovelo "natural" da rota quando ainda não há waypoint nenhum. */
+    _addHandlePositions(context, element) {
         const [startEp, endEp] = this._getEditableEndpoints(context, element);
-        return naturalBendPoint(startEp.worldPoint, endEp.worldPoint, element.routeType);
+        const start = startEp.worldPoint;
+        const end = endEp.worldPoint;
+
+        if (element.waypoints.length === 0) {
+            return [{ insertIndex: 0, worldPoint: naturalBendPoint(start, end, element.routeType) }];
+        }
+
+        const points = [start, ...element.waypoints, end];
+        const positions = [];
+        for (let i = 0; i < points.length - 1; i++) {
+            positions.push({
+                insertIndex: i,
+                worldPoint: { x: (points[i].x + points[i + 1].x) / 2, y: (points[i].y + points[i + 1].y) / 2 },
+            });
+        }
+        return positions;
     }
 
-    _hitTestBendHandle(context, element, screenPoint) {
-        const worldPoint = this._bendHandleWorldPoint(context, element);
-        const s = context.camera.worldToScreen(worldPoint.x, worldPoint.y);
-        return Math.hypot(screenPoint.x - s.x, screenPoint.y - s.y) <= HANDLE_HIT_RADIUS;
+    _hitTestWaypointHandle(context, element, screenPoint) {
+        for (let i = 0; i < element.waypoints.length; i++) {
+            const s = context.camera.worldToScreen(element.waypoints[i].x, element.waypoints[i].y);
+            if (Math.hypot(screenPoint.x - s.x, screenPoint.y - s.y) <= HANDLE_HIT_RADIUS) return { index: i };
+        }
+        return null;
+    }
+
+    _hitTestAddWaypointHandle(context, element, screenPoint) {
+        return this._addHandlePositions(context, element)
+            .map(({ insertIndex, worldPoint }) => ({
+                insertIndex,
+                worldPoint: this._snapToGrid(context, worldPoint),
+                screen: context.camera.worldToScreen(worldPoint.x, worldPoint.y),
+            }))
+            .find((h) => Math.hypot(screenPoint.x - h.screen.x, screenPoint.y - h.screen.y) <= HANDLE_HIT_RADIUS) ?? null;
     }
 
     /** Pontos médios das 4 bordas do bbox (com offset pra fora) — arrastar cria um Connector. */
@@ -598,8 +647,14 @@ export class SelectTool extends Tool {
                 context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y)
             );
             this._drawCircleHandles(context, screenPoints);
-            const bendWorld = this._bendHandleWorldPoint(context, single);
-            this._drawSquareHandles(context, [context.camera.worldToScreen(bendWorld.x, bendWorld.y)]);
+
+            const waypointScreen = single.waypoints.map((p) => context.camera.worldToScreen(p.x, p.y));
+            this._drawSquareHandles(context, waypointScreen);
+
+            const addScreen = this._addHandlePositions(context, single).map(({ worldPoint }) =>
+                context.camera.worldToScreen(worldPoint.x, worldPoint.y)
+            );
+            this._drawAddHandles(context, addScreen);
             return;
         }
 
@@ -666,6 +721,21 @@ export class SelectTool extends Tool {
             ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    /** Pontos translúcidos (menores que as alças de verdade) marcando onde arrastar cria um waypoint novo. */
+    _drawAddHandles(context, points) {
+        const ctx = context.renderer.interactiveCtx;
+        ctx.save();
+        ctx.fillStyle = OVERLAY_COLOR;
+        ctx.globalAlpha = 0.35;
+        ctx.setLineDash([]);
+        points.forEach((p) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, HANDLE_RADIUS * 0.7, 0, Math.PI * 2);
+            ctx.fill();
         });
         ctx.restore();
     }

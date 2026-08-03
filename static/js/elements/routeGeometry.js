@@ -5,24 +5,27 @@ import { distanceToSegment } from "../utils/geometry.js";
  * por Line (e subclasses) e Connector — os dois únicos elementos cuja
  * forma depende de um `routeType`.
  *
- * Todas as funções aceitam um `bend` opcional (ponto pelo qual a rota deve
- * passar, arrastado pelo usuário via a alça central do SelectTool — ver
- * `_bendDrag`). Quando presente, ele tem prioridade sobre o `routeType`:
- * a rota vira duas retas passando por `bend` (ou uma curva quadrática, se
- * `routeType === "curved"`) — permite mudar a trajetória sem mexer nas
- * pontas (que continuam presas ao que estiverem conectadas).
+ * Todas as funções aceitam uma lista `waypoints` opcional (pontos
+ * intermediários pelos quais a rota deve passar, arrastados pelo usuário
+ * via as alças quadradas do SelectTool — ver `_waypointDrag`). Quando há
+ * qualquer waypoint, eles têm prioridade sobre o `routeType`: a rota vira
+ * segmentos retos ligando start → waypoints[] → end — exceto o caso de
+ * exatamente 1 waypoint com `routeType === "curved"`, que mantém a curva
+ * quadrática suave de sempre (compatibilidade com o "bend" único de antes
+ * desta etapa). Sem waypoints, o comportamento é o de sempre: reta, cotovelo
+ * ortogonal, ou curva bezier entre os dois pontos.
  */
 
-export function drawRoutePath(ctx, a, b, routeType, bend = null) {
+export function drawRoutePath(ctx, a, b, routeType, waypoints = []) {
     ctx.beginPath();
-    if (bend) {
+    if (waypoints.length === 1 && routeType === "curved") {
+        const bend = waypoints[0];
         ctx.moveTo(a.x, a.y);
-        if (routeType === "curved") {
-            ctx.quadraticCurveTo(bend.x, bend.y, b.x, b.y);
-        } else {
-            ctx.lineTo(bend.x, bend.y);
-            ctx.lineTo(b.x, b.y);
-        }
+        ctx.quadraticCurveTo(bend.x, bend.y, b.x, b.y);
+    } else if (waypoints.length > 0) {
+        ctx.moveTo(a.x, a.y);
+        waypoints.forEach((p) => ctx.lineTo(p.x, p.y));
+        ctx.lineTo(b.x, b.y);
     } else if (routeType === "orthogonal") {
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, a.y);
@@ -41,11 +44,13 @@ export function drawRoutePath(ctx, a, b, routeType, bend = null) {
 /**
  * Ponto adjacente ao início/fim ao longo da rota (não o outro extremo) —
  * usado só para calcular o ângulo da seta: em rotas ortogonais/curvas (ou
- * com bend) a direção real no bico é a do último trecho, não a linha reta
- * entre os dois extremos.
+ * com waypoints) a direção real no bico é a do último trecho, não a linha
+ * reta entre os dois extremos.
  */
-export function routeNearPoint(a, b, routeType, which, bend = null) {
-    if (bend) return bend;
+export function routeNearPoint(a, b, routeType, which, waypoints = []) {
+    if (waypoints.length > 0) {
+        return which === "start" ? waypoints[0] : waypoints[waypoints.length - 1];
+    }
     if (routeType === "orthogonal") return { x: b.x, y: a.y };
     if (routeType === "curved") {
         const midX = (a.x + b.x) / 2;
@@ -54,9 +59,13 @@ export function routeNearPoint(a, b, routeType, which, bend = null) {
     return which === "start" ? b : a;
 }
 
-export function routeContainsPoint(point, start, end, routeType, tolerance, bend = null) {
-    if (bend) {
-        return Math.min(distanceToSegment(point, start, bend), distanceToSegment(point, bend, end)) <= tolerance;
+export function routeContainsPoint(point, start, end, routeType, tolerance, waypoints = []) {
+    if (waypoints.length > 0) {
+        const points = [start, ...waypoints, end];
+        for (let i = 0; i < points.length - 1; i++) {
+            if (distanceToSegment(point, points[i], points[i + 1]) <= tolerance) return true;
+        }
+        return false;
     }
     if (routeType === "orthogonal") {
         const corner = { x: end.x, y: start.y };
@@ -66,10 +75,14 @@ export function routeContainsPoint(point, start, end, routeType, tolerance, bend
     return distanceToSegment(point, start, end) <= tolerance;
 }
 
-export function routeSvgPath(start, end, routeType, bend = null) {
-    if (bend) {
-        if (routeType === "curved") return `M ${start.x} ${start.y} Q ${bend.x} ${bend.y}, ${end.x} ${end.y}`;
-        return `M ${start.x} ${start.y} L ${bend.x} ${bend.y} L ${end.x} ${end.y}`;
+export function routeSvgPath(start, end, routeType, waypoints = []) {
+    if (waypoints.length === 1 && routeType === "curved") {
+        const bend = waypoints[0];
+        return `M ${start.x} ${start.y} Q ${bend.x} ${bend.y}, ${end.x} ${end.y}`;
+    }
+    if (waypoints.length > 0) {
+        const rest = waypoints.map((p) => `L ${p.x} ${p.y}`).join(" ");
+        return `M ${start.x} ${start.y} ${rest} L ${end.x} ${end.y}`;
     }
     if (routeType === "orthogonal") return `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`;
     if (routeType === "curved") {
@@ -79,7 +92,7 @@ export function routeSvgPath(start, end, routeType, bend = null) {
     return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 }
 
-/** Ponto "natural" pra alça de bend quando ainda não há um bend customizado — meio do segmento (ou o cotovelo, na rota ortogonal). */
+/** Ponto "natural" pro primeiro waypoint quando ainda não há nenhum — meio do segmento (ou o cotovelo, na rota ortogonal). */
 export function naturalBendPoint(a, b, routeType) {
     if (routeType === "orthogonal") return { x: b.x, y: a.y };
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };

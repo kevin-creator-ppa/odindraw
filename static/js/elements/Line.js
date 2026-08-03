@@ -16,11 +16,13 @@ function normalizeArrowType(value, fallback) {
  * só para participar do culling/seleção por área; o desenho de fato usa
  * sempre os pontos.
  *
- * `routeType` (reta/ortogonal/curva) e o marcador em cada ponta
- * (startArrowType/endArrowType — ver arrowhead.js pros tipos) são
- * independentes e editáveis depois de criada — Arrow.js e
- * OrthogonalLine.js só mudam os padrões (endArrowType / routeType) pra
- * combinar com a ferramenta que os cria.
+ * `routeType` (reta/ortogonal/curva), o marcador em cada ponta
+ * (startArrowType/endArrowType — ver arrowhead.js pros tipos) e
+ * `waypoints` (pontos intermediários arrastáveis — ver
+ * tools/SelectTool.js e elements/routeGeometry.js) são independentes e
+ * editáveis depois de criada — Arrow.js e OrthogonalLine.js só mudam os
+ * padrões (endArrowType / routeType) pra combinar com a ferramenta que
+ * os cria.
  */
 export class Line extends Element {
     constructor({
@@ -35,7 +37,8 @@ export class Line extends Element {
         startArrowType,
         endArrowType,
         routeType = "straight",
-        bend = null,
+        waypoints,
+        bend = null, // formato antigo (um único ponto) — migra pra waypoints=[bend] se não vier `waypoints`
     } = {}) {
         super(type, {
             x: Math.min(x1, x2),
@@ -51,7 +54,7 @@ export class Line extends Element {
         this.startArrowType = normalizeArrowType(startArrowType ?? startArrow, "none");
         this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "none");
         this.routeType = routeType;
-        this.bend = bend;
+        this.waypoints = waypoints ?? (bend ? [bend] : []);
     }
 
     translate(dx, dy) {
@@ -60,7 +63,7 @@ export class Line extends Element {
         this.y1 += dy;
         this.x2 += dx;
         this.y2 += dy;
-        if (this.bend) this.bend = { x: this.bend.x + dx, y: this.bend.y + dy };
+        this.waypoints = this.waypoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
     }
 
     /** Move um dos extremos (alça de edição de pontos do SelectTool) e ressincroniza o bbox. */
@@ -81,12 +84,12 @@ export class Line extends Element {
     render(ctx, camera) {
         const a = camera.worldToScreen(this.x1, this.y1);
         const b = camera.worldToScreen(this.x2, this.y2);
-        const bend = this.bend ? camera.worldToScreen(this.bend.x, this.bend.y) : null;
+        const waypoints = this.waypoints.map((p) => camera.worldToScreen(p.x, p.y));
         ctx.save();
         this.applyStyle(ctx);
-        drawRoutePath(ctx, a, b, this.routeType, bend);
-        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", bend), a);
-        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", bend), b);
+        drawRoutePath(ctx, a, b, this.routeType, waypoints);
+        drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
+        drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);
         ctx.restore();
     }
 
@@ -97,7 +100,7 @@ export class Line extends Element {
             { x: this.x2, y: this.y2 },
             this.routeType,
             tolerance,
-            this.bend
+            this.waypoints
         );
     }
 
@@ -111,7 +114,7 @@ export class Line extends Element {
             startArrowType: this.startArrowType,
             endArrowType: this.endArrowType,
             routeType: this.routeType,
-            bend: this.bend,
+            waypoints: this.waypoints,
         };
     }
 
@@ -120,12 +123,19 @@ export class Line extends Element {
         const end = { x: this.x2, y: this.y2 };
         const stroke = this.resolvedStroke();
         const markers =
-            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.bend), start, stroke) +
-            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.bend), end, stroke);
+            markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.waypoints), start, stroke) +
+            markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.waypoints), end, stroke);
 
         return `<g fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}"${this.svgDashArray()}>
-            <path d="${routeSvgPath(start, end, this.routeType, this.bend)}" />
+            <path d="${routeSvgPath(start, end, this.routeType, this.waypoints)}" />
             ${markers}
         </g>`;
+    }
+
+    /** Sobrescreve Element.clone(): sem isso, a cópia compartilharia os mesmos objetos de ponto do array `waypoints` do original. */
+    clone() {
+        const copy = super.clone();
+        copy.waypoints = this.waypoints.map((p) => ({ ...p }));
+        return copy;
     }
 }
