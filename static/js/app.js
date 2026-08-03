@@ -51,6 +51,7 @@ import { OrthogonalLineTool } from "./tools/OrthogonalLineTool.js";
 import { TextTool } from "./tools/TextTool.js";
 import { FreehandTool } from "./tools/FreehandTool.js";
 import { EraserTool } from "./tools/EraserTool.js";
+import { TableTool } from "./tools/TableTool.js";
 import { Rectangle } from "./elements/Rectangle.js";
 import { Ellipse } from "./elements/Ellipse.js";
 import { Diamond } from "./elements/Diamond.js";
@@ -64,6 +65,7 @@ import { OrthogonalLine } from "./elements/OrthogonalLine.js";
 import { Text } from "./elements/Text.js";
 import { Freehand } from "./elements/Freehand.js";
 import { Connector } from "./elements/Connector.js";
+import { Table } from "./elements/Table.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
 const ZOOM_STEP = 1.2;
@@ -194,6 +196,7 @@ function initCanvasEngine() {
             new TextTool(),
             new FreehandTool(),
             new EraserTool(),
+            new TableTool(),
         ],
     });
 
@@ -381,6 +384,9 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
             case "cloud":
                 addAndSelect(new Cloud(normalizeShapeBounds(start, end)));
                 break;
+            case "table":
+                addAndSelect(new Table(normalizeShapeBounds(start, end)));
+                break;
             case "line":
                 addAndSelect(
                     createLineOrConnector({ start, end, startObjectId, endObjectId, routeType: "straight" })
@@ -443,6 +449,15 @@ function initTextEditing({ canvasArea, camera, scene, toolManager, textEditor })
         const worldPoint = camera.screenToWorld(event.clientX - rect.left, event.clientY - rect.top);
         const hit = scene.getObjectAtPoint(worldPoint);
         if (!hit || scene.isElementLocked(hit)) return;
+
+        if (hit.type === "table") {
+            const cell = hit.cellAtPoint(worldPoint);
+            if (!cell) return;
+            toolManager.setActiveTool("select");
+            textEditor.openCell(hit, cell.row, cell.col);
+            return;
+        }
+
         if (hit.type !== "text" && !hit.textLabel) return;
 
         toolManager.setActiveTool("select");

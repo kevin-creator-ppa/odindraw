@@ -12,6 +12,7 @@ import { Text } from "./Text.js";
 import { Freehand } from "./Freehand.js";
 import { Connector } from "./Connector.js";
 import { Component } from "./Component.js";
+import { Table } from "./Table.js";
 
 const CONSTRUCTORS = {
     rectangle: Rectangle,
@@ -28,6 +29,7 @@ const CONSTRUCTORS = {
     freehand: Freehand,
     connector: Connector,
     component: Component,
+    table: Table,
 };
 
 /**

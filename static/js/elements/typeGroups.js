@@ -9,4 +9,5 @@ export const RESIZABLE_TYPES = new Set([
     "cylinder",
     "cloud",
     "component",
+    "table",
 ]);

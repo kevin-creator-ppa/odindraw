@@ -76,7 +76,7 @@ export class PropertiesPanel {
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
-                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"]'
+                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"]'
             ),
         ];
 
@@ -84,6 +84,7 @@ export class PropertiesPanel {
         this._lineOnlyRows = document.querySelectorAll("[data-line-only]");
         this._hiddenForLineRows = document.querySelectorAll("[data-hide-for-line]");
         this._resizableOnlyRows = document.querySelectorAll("[data-resizable-only]");
+        this._tableOnlyRows = document.querySelectorAll("[data-table-only]");
         this._textEmptyHint = document.querySelector("[data-text-empty-hint]");
 
         this._bindTabs();
@@ -210,6 +211,17 @@ export class PropertiesPanel {
         document
             .querySelector('[data-action="bring-forward"]')
             .addEventListener("click", () => this._reorderRelative(1));
+
+        document.querySelector('[data-action="add-row"]').addEventListener("click", () => this._applyTable((t) => t.addRow()));
+        document
+            .querySelector('[data-action="remove-row"]')
+            .addEventListener("click", () => this._applyTable((t) => t.removeRow()));
+        document
+            .querySelector('[data-action="add-column"]')
+            .addEventListener("click", () => this._applyTable((t) => t.addColumn()));
+        document
+            .querySelector('[data-action="remove-column"]')
+            .addEventListener("click", () => this._applyTable((t) => t.removeColumn()));
 
         document.querySelector('[data-action="duplicate-selected"]').addEventListener("click", () => {
             duplicateSelected({
@@ -352,6 +364,16 @@ export class PropertiesPanel {
         this.visibleBtn.classList.toggle("segmented__active", !this._current.visible);
     }
 
+    /** Como _apply(), mas só afeta os selecionados do tipo "table" (mutate recebe a Table) e já commita — usado pelos botões de linha/coluna. */
+    _applyTable(mutate) {
+        if (this._selection.length === 0) return;
+        this._selection.forEach((el) => {
+            if (el.type === "table") mutate(el);
+        });
+        this.renderer.markDirty();
+        this._commit();
+    }
+
     /** Aplica a mutação em TODOS os elementos selecionados (edição em lote). */
     _apply(mutate) {
         if (this._selection.length === 0) return;
@@ -407,10 +429,12 @@ export class PropertiesPanel {
         const isText = Boolean(this._textHost(element));
         const isLine = LINE_TYPES.has(element?.type);
         const isResizable = selectionCount === 1 && RESIZABLE_TYPES.has(element?.type);
+        const isTable = element?.type === "table";
         this._textOnlyRows.forEach((row) => (row.hidden = !isText));
         this._lineOnlyRows.forEach((row) => (row.hidden = !isLine));
         this._hiddenForLineRows.forEach((row) => (row.hidden = isLine));
         this._resizableOnlyRows.forEach((row) => (row.hidden = !isResizable));
+        this._tableOnlyRows.forEach((row) => (row.hidden = !isTable));
         this._textEmptyHint.hidden = !element || isText;
     }
 

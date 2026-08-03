@@ -28,6 +28,7 @@ export const ICONS = {
     triangle: svg('<path d="M12 4l9 16H3z"/>'),
     hexagon: svg('<path d="M8 4h8l4 8-4 8H8l-4-8z"/>'),
     cylinder: svg('<path d="M4 6a8 3 0 0 0 16 0M4 6a8 3 0 0 1 16 0v12a8 3 0 0 1-16 0z"/>'),
+    table: svg('<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 10h18M3 16h18M9 4v16M15 4v16"/>'),
     cloud: svg(
         '<path d="M7 18a4 4 0 0 1-.5-7.97A5 5 0 0 1 16 8a4 4 0 0 1 1.5 9.9"/><path d="M7 18h10"/>'
     ),
