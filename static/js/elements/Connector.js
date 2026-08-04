@@ -1,6 +1,10 @@
 import { Element } from "./Element.js";
 import { drawMarker, markerSvg } from "./arrowhead.js";
-import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath } from "./routeGeometry.js";
+import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath, routeMidpoint } from "./routeGeometry.js";
+import { defaultLabel, drawLabel, labelToSVG } from "./shapeLabel.js";
+
+const LABEL_BOX_WIDTH = 140;
+const LABEL_BOX_HEIGHT = 32;
 
 /** `true`/`false` (formato antigo) vira "open"/"none"; string passa direto; sem valor usa o padrão. */
 function normalizeArrowType(value, fallback) {
@@ -46,6 +50,7 @@ export class Connector extends Element {
         endArrowType,
         waypoints,
         bend = null, // formato antigo (um único ponto) — migra pra waypoints=[bend] se não vier `waypoints`
+        textLabel,
         style,
     } = {}) {
         super("connector", {
@@ -63,8 +68,15 @@ export class Connector extends Element {
         this.startArrowType = normalizeArrowType(startArrowType ?? startArrow, "none");
         this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "open");
         this.waypoints = waypoints ?? (bend ? [bend] : []);
+        this.textLabel = defaultLabel({ fontSize: 12, ...textLabel });
         this._resolvedStart = startPoint;
         this._resolvedEnd = endPoint;
+    }
+
+    /** Bounds (mundo) do rótulo embutido, centrado no meio da rota resolvida — usado pelo TextEditor.js (ver `labelBounds`, checado por duck-typing). */
+    labelBounds() {
+        const mid = routeMidpoint(this._resolvedStart, this._resolvedEnd, this.routeType, this.waypoints);
+        return { x: mid.x - LABEL_BOX_WIDTH / 2, y: mid.y - LABEL_BOX_HEIGHT / 2, width: LABEL_BOX_WIDTH, height: LABEL_BOX_HEIGHT };
     }
 
     /** Recalcula os pontos resolvidos (mundo) a partir dos objetos ligados, se houver, e sincroniza o bbox. */
@@ -119,6 +131,14 @@ export class Connector extends Element {
         drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
         drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);
         ctx.restore();
+
+        if (this.textLabel.text && !this.isEditing) {
+            const bounds = this.labelBounds();
+            const screenMid = camera.worldToScreen(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+            const w = bounds.width * camera.zoom;
+            const h = bounds.height * camera.zoom;
+            drawLabel(ctx, this.textLabel, { x: screenMid.x - w / 2, y: screenMid.y - h / 2, width: w, height: h }, camera.zoom);
+        }
     }
 
     serialize() {
@@ -143,10 +163,12 @@ export class Connector extends Element {
             markerSvg(this.startArrowType, routeNearPoint(start, end, this.routeType, "start", this.waypoints), start, stroke) +
             markerSvg(this.endArrowType, routeNearPoint(start, end, this.routeType, "end", this.waypoints), end, stroke);
 
+        const labelSvg = this.textLabel.text ? labelToSVG(this.textLabel, this.labelBounds()) : "";
+
         return `<g fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" opacity="${this.style.opacity}">
             <path d="${routeSvgPath(start, end, this.routeType, this.waypoints)}"${this.svgDashArray()} />
             ${markers}
-        </g>`;
+        </g>${labelSvg}`;
     }
 
     /** Sobrescreve Element.clone(): sem isso, a cópia compartilharia os mesmos objetos de ponto (startPoint/endPoint/waypoints) do original. */

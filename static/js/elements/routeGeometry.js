@@ -97,3 +97,32 @@ export function naturalBendPoint(a, b, routeType) {
     if (routeType === "orthogonal") return { x: b.x, y: a.y };
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
+
+/** Ponto a 50% do comprimento total da rota (poligonal start→waypoints→end, ou o cotovelo ortogonal) — usado pra posicionar o rótulo embutido da linha/conector. Curva sem waypoint é aproximada pela reta, só pra fins de posicionamento. */
+export function routeMidpoint(start, end, routeType, waypoints = []) {
+    let points;
+    if (waypoints.length > 0) points = [start, ...waypoints, end];
+    else if (routeType === "orthogonal") points = [start, { x: end.x, y: start.y }, end];
+    else points = [start, end];
+
+    const segmentLengths = [];
+    let total = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        const len = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+        segmentLengths.push(len);
+        total += len;
+    }
+
+    let remaining = total / 2;
+    for (let i = 0; i < segmentLengths.length; i++) {
+        if (remaining <= segmentLengths[i] || i === segmentLengths.length - 1) {
+            const t = segmentLengths[i] > 0 ? remaining / segmentLengths[i] : 0;
+            return {
+                x: points[i].x + (points[i + 1].x - points[i].x) * t,
+                y: points[i].y + (points[i + 1].y - points[i].y) * t,
+            };
+        }
+        remaining -= segmentLengths[i];
+    }
+    return points[0];
+}

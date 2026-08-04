@@ -172,7 +172,7 @@ export class TextEditor {
 
         const el = this.element;
         if (this._isLabel) {
-            const bounds = el.getBounds();
+            const bounds = typeof el.labelBounds === "function" ? el.labelBounds() : el.getBounds();
             const topLeft = this.camera.worldToScreen(bounds.x, bounds.y);
             const label = el.textLabel;
             Object.assign(this.textarea.style, {
