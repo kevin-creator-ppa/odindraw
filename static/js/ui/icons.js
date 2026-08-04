@@ -88,6 +88,14 @@ export const ICONS = {
     ungroup: svg(
         '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>'
     ),
+    "align-left": svg('<path d="M4 3v18"/><rect x="4" y="6" width="10" height="4"/><rect x="4" y="14" width="14" height="4"/>'),
+    "align-center-h": svg('<path d="M12 3v18"/><rect x="7" y="6" width="10" height="4"/><rect x="9" y="14" width="6" height="4"/>'),
+    "align-right": svg('<path d="M20 3v18"/><rect x="10" y="6" width="10" height="4"/><rect x="6" y="14" width="14" height="4"/>'),
+    "align-top": svg('<path d="M3 4h18"/><rect x="6" y="4" width="4" height="10"/><rect x="14" y="4" width="4" height="14"/>'),
+    "align-middle-v": svg('<path d="M3 12h18"/><rect x="6" y="7" width="4" height="10"/><rect x="14" y="9" width="4" height="6"/>'),
+    "align-bottom": svg('<path d="M3 20h18"/><rect x="6" y="10" width="4" height="10"/><rect x="14" y="6" width="4" height="14"/>'),
+    "distribute-h": svg('<rect x="3" y="6" width="4" height="12"/><rect x="10" y="6" width="4" height="12"/><rect x="17" y="6" width="4" height="12"/>'),
+    "distribute-v": svg('<rect x="6" y="3" width="12" height="4"/><rect x="6" y="10" width="12" height="4"/><rect x="6" y="17" width="12" height="4"/>'),
     "paint-bucket": svg(
         '<path d="M11 3l8 8-8.5 8.5a2 2 0 0 1-2.8 0L4.5 16.3a2 2 0 0 1 0-2.8L11 6"/><path d="M4 12h13"/><circle cx="19" cy="18" r="2.3"/>'
     ),

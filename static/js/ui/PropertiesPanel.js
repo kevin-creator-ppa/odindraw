@@ -1,4 +1,14 @@
 import { duplicateSelected, deleteSelected } from "../managers/objectActions.js";
+import {
+    alignLeft,
+    alignRight,
+    alignCenterH,
+    alignTop,
+    alignBottom,
+    alignMiddleV,
+    distributeHorizontal,
+    distributeVertical,
+} from "../managers/alignActions.js";
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 import { resolveInkColor } from "./theme.js";
 import { MARKER_TYPES } from "../elements/arrowhead.js";
@@ -76,7 +86,7 @@ export class PropertiesPanel {
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
-                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"]'
+                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"], [data-action="align-left"], [data-action="align-center-h"], [data-action="align-right"], [data-action="align-top"], [data-action="align-middle-v"], [data-action="align-bottom"], [data-action="distribute-h"], [data-action="distribute-v"]'
             ),
         ];
 
@@ -85,6 +95,7 @@ export class PropertiesPanel {
         this._hiddenForLineRows = document.querySelectorAll("[data-hide-for-line]");
         this._resizableOnlyRows = document.querySelectorAll("[data-resizable-only]");
         this._tableOnlyRows = document.querySelectorAll("[data-table-only]");
+        this._multiOnlyRows = document.querySelectorAll("[data-multi-only]");
         this._textEmptyHint = document.querySelector("[data-text-empty-hint]");
 
         this._bindTabs();
@@ -211,6 +222,15 @@ export class PropertiesPanel {
         document
             .querySelector('[data-action="bring-forward"]')
             .addEventListener("click", () => this._reorderRelative(1));
+
+        document.querySelector('[data-action="align-left"]').addEventListener("click", () => this._applyAlign(alignLeft));
+        document.querySelector('[data-action="align-center-h"]').addEventListener("click", () => this._applyAlign(alignCenterH));
+        document.querySelector('[data-action="align-right"]').addEventListener("click", () => this._applyAlign(alignRight));
+        document.querySelector('[data-action="align-top"]').addEventListener("click", () => this._applyAlign(alignTop));
+        document.querySelector('[data-action="align-middle-v"]').addEventListener("click", () => this._applyAlign(alignMiddleV));
+        document.querySelector('[data-action="align-bottom"]').addEventListener("click", () => this._applyAlign(alignBottom));
+        document.querySelector('[data-action="distribute-h"]').addEventListener("click", () => this._applyAlign(distributeHorizontal));
+        document.querySelector('[data-action="distribute-v"]').addEventListener("click", () => this._applyAlign(distributeVertical));
 
         document.querySelector('[data-action="add-row"]').addEventListener("click", () => this._applyTable((t) => t.addRow()));
         document
@@ -364,6 +384,14 @@ export class PropertiesPanel {
         this.visibleBtn.classList.toggle("segmented__active", !this._current.visible);
     }
 
+    /** Aplica uma função de alinhamento/distribuição (managers/alignActions.js) à seleção inteira e commita. */
+    _applyAlign(fn) {
+        if (this._selection.length < 2) return;
+        fn(this._selection);
+        this.renderer.markDirty();
+        this._commit();
+    }
+
     /** Como _apply(), mas só afeta os selecionados do tipo "table" (mutate recebe a Table) e já commita — usado pelos botões de linha/coluna. */
     _applyTable(mutate) {
         if (this._selection.length === 0) return;
@@ -435,6 +463,7 @@ export class PropertiesPanel {
         this._hiddenForLineRows.forEach((row) => (row.hidden = isLine));
         this._resizableOnlyRows.forEach((row) => (row.hidden = !isResizable));
         this._tableOnlyRows.forEach((row) => (row.hidden = !isTable));
+        this._multiOnlyRows.forEach((row) => (row.hidden = selectionCount < 2));
         this._textEmptyHint.hidden = !element || isText;
     }
 
