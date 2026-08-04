@@ -38,6 +38,7 @@ export const ICONS = {
     text: svg('<path d="M5 6h14M12 6v13M9 19h6"/>'),
     freehand: svg('<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><path d="M14 7l3 3"/>'),
     eraser: svg('<path d="M15 3l6 6-9.5 9.5H6L3 15z"/><path d="M8.5 20.5H21"/><path d="M9 9l6 6"/>'),
+    comment: svg('<path d="M4 5h16v10H9l-4 4v-4H4z"/><path d="M8 9h8M8 12h5"/>'),
 
     // Topbar / menu
     menu: svg('<path d="M3 6h18M3 12h18M3 18h18"/>'),

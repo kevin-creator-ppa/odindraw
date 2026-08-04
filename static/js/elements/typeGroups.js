@@ -10,4 +10,5 @@ export const RESIZABLE_TYPES = new Set([
     "cloud",
     "component",
     "table",
+    "comment",
 ]);
