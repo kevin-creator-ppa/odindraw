@@ -27,7 +27,7 @@ export function exportPng(scene, filename = "diagrama.png") {
     ctx.fillRect(0, 0, frame.width, frame.height);
 
     const camera = exportCamera(frame);
-    const sorted = [...scene.objects].filter((el) => el.visible).sort((a, b) => a.zIndex - b.zIndex);
+    const sorted = [...scene.objects].filter((el) => scene.isElementVisible(el)).sort((a, b) => scene.stackCompare(a, b));
     sorted.forEach((element) => element.render(ctx, camera, scene));
 
     canvas.toBlob((blob) => downloadBlob(blob, filename), "image/png");

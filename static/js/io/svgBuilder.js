@@ -15,10 +15,10 @@ export function computeElementsBounds(elements, scene) {
     return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-/** Bounding box (mundo) de todos os elementos visíveis, com um retângulo padrão para cena vazia. */
+/** Bounding box (mundo) de todos os elementos visíveis (elemento + camada), com um retângulo padrão para cena vazia. */
 export function computeSceneBounds(scene) {
     return computeElementsBounds(
-        scene.objects.filter((el) => el.visible),
+        scene.objects.filter((el) => scene.isElementVisible(el)),
         scene
     );
 }
@@ -37,7 +37,7 @@ export function computeExportFrame(scene) {
 /** Monta o SVG completo do diagrama (fundo branco + todos os elementos visíveis, ordenados por camada). */
 export function buildSvgString(scene) {
     const frame = computeExportFrame(scene);
-    const sorted = [...scene.objects].filter((el) => el.visible).sort((a, b) => a.zIndex - b.zIndex);
+    const sorted = [...scene.objects].filter((el) => scene.isElementVisible(el)).sort((a, b) => scene.stackCompare(a, b));
     const body = sorted.map((el) => el.toSVG()).join("\n");
 
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${frame.width}" height="${frame.height}" viewBox="0 0 ${frame.width} ${frame.height}">

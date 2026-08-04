@@ -29,6 +29,7 @@ import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
+import { exportDrawio } from "./io/ExportDrawio.js";
 import { computeSceneBounds, computeElementsBounds } from "./io/svgBuilder.js";
 import { extractStyle, applyStyle } from "./managers/styleClipboard.js";
 import { copySelection, pasteClipboard } from "./managers/clipboard.js";
@@ -122,7 +123,7 @@ function initPropertiesPanelToggle() {
 }
 
 /** Liga os 3 itens do dropdown Exportar; avisa se não há nada desenhado ainda. */
-function initExportActions({ scene }) {
+function initExportActions({ scene, saveLoad }) {
     const guardEmptyScene = () => {
         if (scene.objects.length === 0) {
             window.alert("Não há nada para exportar ainda.");
@@ -149,6 +150,11 @@ function initExportActions({ scene }) {
             window.alert("Não foi possível exportar o PDF.");
             console.error(error);
         }
+    });
+
+    document.querySelector('[data-action="export-drawio"]').addEventListener("click", () => {
+        if (guardEmptyScene()) return;
+        exportDrawio(scene, saveLoad.diagramName);
     });
 }
 
