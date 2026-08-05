@@ -53,5 +53,6 @@ export function elementFromJSON(data) {
     element.visible = data.visible ?? true;
     element.groupId = data.groupId ?? null;
     element.layerId = data.layerId ?? null;
+    element.link = data.link ?? null;
     return element;
 }

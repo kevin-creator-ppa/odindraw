@@ -17,6 +17,7 @@ function defaultStyle() {
         strokeStyle: "solid",
         opacity: 1,
         shadow: false,
+        fill2: null,
     };
 }
 
@@ -41,6 +42,7 @@ export class Element {
         this.visible = true;
         this.groupId = null;
         this.layerId = null;
+        this.link = null;
         this.style = { ...defaultStyle(), ...style };
     }
 
@@ -78,9 +80,23 @@ export class Element {
         return resolveInkColor(this.style.fill);
     }
 
-    applyStyle(ctx) {
+    /**
+     * `screenBounds` (top-left + w/h em pixels de tela, antes do
+     * translate/rotate de render()) só é usado quando há gradiente
+     * (style.fill2): o gradiente do canvas fica "preso" ao sistema de
+     * coordenadas vigente no momento em que é criado, então precisa ser
+     * definido aqui — antes da transformação local que drawShape() usa.
+     */
+    applyStyle(ctx, screenBounds, screenW, screenH) {
         ctx.globalAlpha = this.style.opacity;
-        ctx.fillStyle = this.resolvedFill();
+        if (this.style.fill2 && screenBounds) {
+            const gradient = ctx.createLinearGradient(screenBounds.x, screenBounds.y, screenBounds.x, screenBounds.y + screenH);
+            gradient.addColorStop(0, this.resolvedFill());
+            gradient.addColorStop(1, resolveInkColor(this.style.fill2));
+            ctx.fillStyle = gradient;
+        } else {
+            ctx.fillStyle = this.resolvedFill();
+        }
         ctx.strokeStyle = this.resolvedStroke();
         ctx.lineWidth = this.style.strokeWidth;
 
@@ -113,7 +129,7 @@ export class Element {
         const h = this.height * camera.zoom;
 
         ctx.save();
-        this.applyStyle(ctx);
+        this.applyStyle(ctx, topLeft, w, h);
         if (this.style.shadow) {
             ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
             ctx.shadowBlur = 8 * camera.zoom;
@@ -160,6 +176,7 @@ export class Element {
             visible: this.visible,
             groupId: this.groupId,
             layerId: this.layerId,
+            link: this.link,
             style: { ...this.style },
             ...(this.textLabel ? { textLabel: { ...this.textLabel } } : {}),
         };

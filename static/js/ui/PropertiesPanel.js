@@ -61,6 +61,9 @@ export class PropertiesPanel {
         this.flipVBtn = document.querySelector('[data-prop="flip-v"]');
         this.roundedBtn = document.querySelector('[data-prop="rounded"]');
         this.shadowBtn = document.querySelector('[data-prop="shadow"]');
+        this.fill2 = document.querySelector('[data-prop="fill2"]');
+        this.gradientBtn = document.querySelector('[data-action="toggle-gradient"]');
+        this.link = document.querySelector('[data-prop="link"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
 
@@ -84,6 +87,9 @@ export class PropertiesPanel {
             this.flipVBtn,
             this.roundedBtn,
             this.shadowBtn,
+            this.fill2,
+            this.gradientBtn,
+            this.link,
             this.lockBtn,
             this.visibleBtn,
             ...this.alignButtons,
@@ -203,6 +209,24 @@ export class PropertiesPanel {
         this._bindBooleanToggle(this.flipVBtn, "flipY");
         this._bindBooleanToggle(this.roundedBtn, "rounded");
         this._bindStyleBooleanToggle(this.shadowBtn, "shadow");
+
+        this.gradientBtn.addEventListener("click", () => {
+            const enabling = !this._current?.style.fill2;
+            this._apply((el) => (el.style.fill2 = enabling ? this.fill2.value : null));
+            this.gradientBtn.classList.toggle("segmented__active", enabling);
+            this._commit();
+        });
+        this.fill2.addEventListener("input", () =>
+            this._apply((el) => {
+                if (el.style.fill2) el.style.fill2 = this.fill2.value;
+            })
+        );
+        this.fill2.addEventListener("change", () => this._commit());
+
+        this.link.addEventListener("change", () => {
+            this._apply((el) => (el.link = this.link.value.trim() || null));
+            this._commit();
+        });
 
         this.alignButtons.forEach((button) => {
             button.addEventListener("click", () => {
@@ -469,6 +493,9 @@ export class PropertiesPanel {
         this.flipVBtn.classList.toggle("segmented__active", Boolean(element.flipY));
         this.roundedBtn.classList.toggle("segmented__active", Boolean(element.rounded));
         this.shadowBtn.classList.toggle("segmented__active", Boolean(element.style.shadow));
+        this.gradientBtn.classList.toggle("segmented__active", Boolean(element.style.fill2));
+        this.fill2.value = element.style.fill2 || "#ffffff";
+        this.link.value = element.link ?? "";
     }
 
     _toggleTypeSpecificRows(element, selectionCount) {

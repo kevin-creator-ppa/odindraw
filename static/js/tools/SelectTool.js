@@ -77,6 +77,14 @@ export class SelectTool extends Tool {
     }
 
     onPointerDown(context, point, event) {
+        if (event?.ctrlKey || event?.metaKey) {
+            const hit = context.scene.getObjectAtPoint(point);
+            if (hit?.link) {
+                window.open(hit.link, "_blank", "noopener");
+                return;
+            }
+        }
+
         const single = this._singleSelection(context);
         if (single && !context.scene.isElementLocked(single)) {
             const screenPoint = context.camera.worldToScreen(point.x, point.y);

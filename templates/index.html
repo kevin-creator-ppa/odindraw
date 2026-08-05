@@ -220,6 +220,13 @@
                     </div>
                 </div>
                 <div class="property">
+                    <label>Gradiente</label>
+                    <div class="swatches">
+                        <button data-action="toggle-gradient" title="Ativar/desativar gradiente">Ativar</button>
+                        <input type="color" class="swatch swatch--custom" value="#ffffff" data-prop="fill2" title="Segunda cor do gradiente">
+                    </div>
+                </div>
+                <div class="property">
                     <label>Espessura</label>
                     <div class="segmented" data-prop="stroke-width">
                         <button data-value="1" title="Fina">&#9473;</button>
@@ -364,6 +371,10 @@
                         <button data-action="bring-forward" data-icon="layer-forward" title="Avançar uma camada"></button>
                         <button data-action="bring-front" data-icon="layer-front" title="Trazer para frente"></button>
                     </div>
+                </div>
+                <div class="property">
+                    <label>Link (Ctrl+clique abre)</label>
+                    <input type="text" data-prop="link" placeholder="https://…">
                 </div>
                 <div class="property">
                     <label>Ações</label>
