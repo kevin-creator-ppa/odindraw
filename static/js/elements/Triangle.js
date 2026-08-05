@@ -1,5 +1,6 @@
 import { Element } from "./Element.js";
 import { defaultLabel, drawLabel, labelToSVG } from "./shapeLabel.js";
+import { sketchState, sketchyPolygon, seedFromId } from "./sketch.js";
 
 /** Triângulo com rótulo de texto opcional embutido — aponta pra cima, base ocupando a largura inferior do bbox. */
 export class Triangle extends Element {
@@ -23,11 +24,21 @@ export class Triangle extends Element {
 
     drawShape(ctx, x, y, width, height) {
         const points = this._localPoints(width, height);
-        ctx.beginPath();
-        points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.closePath();
-        if (this.style.fill !== "transparent") ctx.fill();
-        if (this.style.strokeWidth > 0) ctx.stroke();
+        if (sketchState.enabled) {
+            if (this.style.fill !== "transparent") {
+                ctx.beginPath();
+                points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+                ctx.closePath();
+                ctx.fill();
+            }
+            if (this.style.strokeWidth > 0) sketchyPolygon(ctx, points, seedFromId(this.id));
+        } else {
+            ctx.beginPath();
+            points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+            ctx.closePath();
+            if (this.style.fill !== "transparent") ctx.fill();
+            if (this.style.strokeWidth > 0) ctx.stroke();
+        }
 
         if (this.isEditing) return;
         const zoom = this.width > 0 ? width / this.width : 1;

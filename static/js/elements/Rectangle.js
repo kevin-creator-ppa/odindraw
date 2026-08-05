@@ -1,5 +1,6 @@
 import { Element } from "./Element.js";
 import { defaultLabel, drawLabel, labelToSVG } from "./shapeLabel.js";
+import { sketchState, sketchyRect, seedFromId } from "./sketch.js";
 
 /** Retângulo com um rótulo de texto opcional embutido (duplo clique pra editar — ver TextEditor.js), centralizado e que quebra/encolhe pra caber. `rounded` alterna cantos retos/arredondados (ver PropertiesPanel.js, aba Estilo). */
 export class Rectangle extends Element {
@@ -14,7 +15,14 @@ export class Rectangle extends Element {
     }
 
     drawShape(ctx, x, y, width, height) {
-        if (this.style.fill !== "transparent" || this.style.strokeWidth > 0) {
+        if (sketchState.enabled && !this.rounded) {
+            if (this.style.fill !== "transparent") {
+                ctx.beginPath();
+                ctx.rect(x, y, width, height);
+                ctx.fill();
+            }
+            if (this.style.strokeWidth > 0) sketchyRect(ctx, x, y, width, height, seedFromId(this.id));
+        } else if (this.style.fill !== "transparent" || this.style.strokeWidth > 0) {
             ctx.beginPath();
             if (this.rounded) ctx.roundRect(x, y, width, height, this._cornerRadius(width, height));
             else ctx.rect(x, y, width, height);

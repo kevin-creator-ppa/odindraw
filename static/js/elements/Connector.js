@@ -2,6 +2,7 @@ import { Element } from "./Element.js";
 import { drawMarker, markerSvg } from "./arrowhead.js";
 import { drawRoutePath, routeNearPoint, routeContainsPoint, routeSvgPath, routeMidpoint } from "./routeGeometry.js";
 import { defaultLabel, drawLabel, labelToSVG } from "./shapeLabel.js";
+import { sketchState, sketchyLine, seedFromId } from "./sketch.js";
 
 const LABEL_BOX_WIDTH = 140;
 const LABEL_BOX_HEIGHT = 32;
@@ -144,7 +145,11 @@ export class Connector extends Element {
 
         ctx.save();
         this.applyStyle(ctx);
-        drawRoutePath(ctx, a, b, this.routeType, waypoints);
+        if (sketchState.enabled && this.routeType === "straight" && waypoints.length === 0) {
+            sketchyLine(ctx, a.x, a.y, b.x, b.y, seedFromId(this.id));
+        } else {
+            drawRoutePath(ctx, a, b, this.routeType, waypoints);
+        }
         drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
         drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);
         ctx.restore();

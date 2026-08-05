@@ -69,6 +69,7 @@ import { Freehand } from "./elements/Freehand.js";
 import { Connector } from "./elements/Connector.js";
 import { Table } from "./elements/Table.js";
 import { Comment } from "./elements/Comment.js";
+import { sketchState } from "./elements/sketch.js";
 import { ImageElement } from "./elements/Image.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
@@ -392,6 +393,25 @@ function initGridToggle(renderer) {
         const enabled = button.getAttribute("data-active") !== "true";
         button.setAttribute("data-active", String(enabled));
         renderer.setGridEnabled(enabled);
+    });
+}
+
+const SKETCH_STORAGE_KEY = "odindraw:sketch";
+
+/** Estilo "desenho à mão" (ver elements/sketch.js): preferência global, não por diagrama — persiste em localStorage, igual o tema. */
+function initSketchToggle(renderer) {
+    const button = document.querySelector('[data-action="toggle-sketch"]');
+    const apply = (enabled) => {
+        sketchState.enabled = enabled;
+        button.setAttribute("data-active", String(enabled));
+        renderer.markDirty();
+    };
+
+    apply(localStorage.getItem(SKETCH_STORAGE_KEY) === "true");
+    button.addEventListener("click", () => {
+        const next = sketchState.enabled ? false : true;
+        localStorage.setItem(SKETCH_STORAGE_KEY, String(next));
+        apply(next);
     });
 }
 
@@ -805,6 +825,7 @@ function init() {
     initPropertiesPanelToggle();
     initZoomControls(engine);
     initGridToggle(engine.renderer);
+    initSketchToggle(engine.renderer);
     initToolSelection(engine.toolManager);
     initElementCreation(engine);
     initTextEditing(engine);
