@@ -1,5 +1,7 @@
 import { mod } from "../utils/geometry.js";
 import { animationState } from "../elements/animationState.js";
+import { computeLineJumps, lineJumpsState } from "../elements/lineJumps.js";
+import { LINE_TYPES } from "../elements/typeGroups.js";
 
 export const BASE_GRID_SPACING = 24;
 const MIN_SCREEN_SPACING = 8;
@@ -108,8 +110,15 @@ export class Renderer {
             .filter((el) => this.scene.isElementVisible(el))
             .sort((a, b) => this.scene.stackCompare(a, b));
 
+        let lineJumps = new Map();
+        if (lineJumpsState.enabled) {
+            const lines = visible.filter((el) => LINE_TYPES.has(el.type));
+            lines.forEach((el) => el.beforeHitTest(this.scene));
+            lineJumps = computeLineJumps(lines);
+        }
+
         for (const element of visible) {
-            element.render(ctx, this.camera, this.scene);
+            element.render(ctx, this.camera, this.scene, lineJumps.get(element) ?? []);
         }
     }
 

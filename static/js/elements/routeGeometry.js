@@ -1,4 +1,5 @@
 import { distanceToSegment } from "../utils/geometry.js";
+import { lineToWithJumps } from "./lineJumps.js";
 
 /**
  * Geometria de rota (reta/ortogonal/curva) entre dois pontos, compartilhada
@@ -16,27 +17,33 @@ import { distanceToSegment } from "../utils/geometry.js";
  * ortogonal, ou curva bezier entre os dois pontos.
  */
 
-export function drawRoutePath(ctx, a, b, routeType, waypoints = []) {
+/** `jumps` (opcional): pontos de cruzamento já em coordenadas de tela, cada um com `segmentIndex` indicando em qual trecho reto da rota ele cai — ver elements/lineJumps.js. Curvas de verdade (bezier/quadrática) nunca ganham pulo, só os trechos retos/ortogonais/com waypoints. */
+export function drawRoutePath(ctx, a, b, routeType, waypoints = [], jumps = []) {
+    const jumpsFor = (segmentIndex) => jumps.filter((j) => j.segmentIndex === segmentIndex);
+
     ctx.beginPath();
     if (waypoints.length === 1 && routeType === "curved") {
         const bend = waypoints[0];
         ctx.moveTo(a.x, a.y);
         ctx.quadraticCurveTo(bend.x, bend.y, b.x, b.y);
     } else if (waypoints.length > 0) {
+        const points = [a, ...waypoints, b];
         ctx.moveTo(a.x, a.y);
-        waypoints.forEach((p) => ctx.lineTo(p.x, p.y));
-        ctx.lineTo(b.x, b.y);
+        for (let i = 0; i < points.length - 1; i++) {
+            lineToWithJumps(ctx, points[i], points[i + 1], jumpsFor(i));
+        }
     } else if (routeType === "orthogonal") {
+        const corner = { x: b.x, y: a.y };
         ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, a.y);
-        ctx.lineTo(b.x, b.y);
+        lineToWithJumps(ctx, a, corner, jumpsFor(0));
+        lineToWithJumps(ctx, corner, b, jumpsFor(1));
     } else if (routeType === "curved") {
         const midX = (a.x + b.x) / 2;
         ctx.moveTo(a.x, a.y);
         ctx.bezierCurveTo(midX, a.y, midX, b.y, b.x, b.y);
     } else {
         ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
+        lineToWithJumps(ctx, a, b, jumpsFor(0));
     }
     ctx.stroke();
 }

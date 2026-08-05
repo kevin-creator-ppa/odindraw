@@ -94,16 +94,17 @@ export class Line extends Element {
         this.height = Math.abs(this.y2 - this.y1);
     }
 
-    render(ctx, camera) {
+    render(ctx, camera, scene, jumps = []) {
         const a = camera.worldToScreen(this.x1, this.y1);
         const b = camera.worldToScreen(this.x2, this.y2);
         const waypoints = this.waypoints.map((p) => camera.worldToScreen(p.x, p.y));
+        const screenJumps = jumps.map((j) => ({ ...camera.worldToScreen(j.x, j.y), segmentIndex: j.segmentIndex }));
         ctx.save();
         this.applyStyle(ctx);
         if (sketchState.enabled && this.routeType === "straight" && waypoints.length === 0) {
             sketchyLine(ctx, a.x, a.y, b.x, b.y, seedFromId(this.id));
         } else {
-            drawRoutePath(ctx, a, b, this.routeType, waypoints);
+            drawRoutePath(ctx, a, b, this.routeType, waypoints, screenJumps);
         }
         drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
         drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);

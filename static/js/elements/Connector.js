@@ -137,18 +137,19 @@ export class Connector extends Element {
         return routeContainsPoint(point, this._resolvedStart, this._resolvedEnd, this.routeType, tolerance, this.waypoints);
     }
 
-    render(ctx, camera, scene) {
+    render(ctx, camera, scene, jumps = []) {
         const { start, end } = this.resolveEndpoints(scene);
         const a = camera.worldToScreen(start.x, start.y);
         const b = camera.worldToScreen(end.x, end.y);
         const waypoints = this.waypoints.map((p) => camera.worldToScreen(p.x, p.y));
+        const screenJumps = jumps.map((j) => ({ ...camera.worldToScreen(j.x, j.y), segmentIndex: j.segmentIndex }));
 
         ctx.save();
         this.applyStyle(ctx);
         if (sketchState.enabled && this.routeType === "straight" && waypoints.length === 0) {
             sketchyLine(ctx, a.x, a.y, b.x, b.y, seedFromId(this.id));
         } else {
-            drawRoutePath(ctx, a, b, this.routeType, waypoints);
+            drawRoutePath(ctx, a, b, this.routeType, waypoints, screenJumps);
         }
         drawMarker(ctx, this.startArrowType, routeNearPoint(a, b, this.routeType, "start", waypoints), a);
         drawMarker(ctx, this.endArrowType, routeNearPoint(a, b, this.routeType, "end", waypoints), b);
