@@ -69,6 +69,7 @@ import { Freehand } from "./elements/Freehand.js";
 import { Connector } from "./elements/Connector.js";
 import { Table } from "./elements/Table.js";
 import { Comment } from "./elements/Comment.js";
+import { ImageElement } from "./elements/Image.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
 const ZOOM_STEP = 1.2;
@@ -155,6 +156,46 @@ function initExportActions({ scene, saveLoad }) {
     document.querySelector('[data-action="export-drawio"]').addEventListener("click", () => {
         if (guardEmptyScene()) return;
         exportDrawio(scene, saveLoad.diagramName);
+    });
+}
+
+/** Inserir imagem: abre o seletor de arquivo nativo, lê como data URI (FileReader) e cria um ImageElement do tamanho da imagem (reduzido se for grande), centralizado no viewport atual. */
+function initInsertImage({ scene, camera, renderer, selectionManager, toolManager, historyManager }) {
+    const MAX_SIDE = 300;
+    const input = document.querySelector("[data-image-input]");
+
+    document.querySelector('[data-action="insert-image"]').addEventListener("click", () => input.click());
+
+    input.addEventListener("change", () => {
+        const file = input.files[0];
+        input.value = "";
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const probe = new Image();
+            probe.onload = () => {
+                const scale = Math.min(1, MAX_SIDE / Math.max(probe.naturalWidth, probe.naturalHeight));
+                const width = Math.round(probe.naturalWidth * scale);
+                const height = Math.round(probe.naturalHeight * scale);
+                const center = camera.screenToWorld(renderer.width / 2, renderer.height / 2);
+
+                const image = new ImageElement({
+                    src: reader.result,
+                    x: center.x - width / 2,
+                    y: center.y - height / 2,
+                    width,
+                    height,
+                });
+                scene.addObject(image);
+                renderer.markDirty();
+                selectionManager.select(image);
+                toolManager.setActiveTool("select");
+                historyManager?.pushSnapshot();
+            };
+            probe.src = reader.result;
+        };
+        reader.readAsDataURL(file);
     });
 }
 
@@ -682,7 +723,9 @@ function init() {
     initTheme(() => engine.renderer.markDirty());
     initMainMenu();
     initExportActions(engine);
+    initInsertImage(engine);
     initDropdownAutoClose();
+    document.addEventListener("odindraw:image-loaded", () => engine.renderer.markDirty());
     initPropertiesPanelToggle();
     initZoomControls(engine);
     initGridToggle(engine.renderer);

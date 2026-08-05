@@ -14,6 +14,7 @@ import { Connector } from "./Connector.js";
 import { Component } from "./Component.js";
 import { Table } from "./Table.js";
 import { Comment } from "./Comment.js";
+import { ImageElement } from "./Image.js";
 
 const CONSTRUCTORS = {
     rectangle: Rectangle,
@@ -32,6 +33,7 @@ const CONSTRUCTORS = {
     component: Component,
     table: Table,
     comment: Comment,
+    image: ImageElement,
 };
 
 /**
