@@ -51,6 +51,8 @@ export class Connector extends Element {
         waypoints,
         bend = null, // formato antigo (um único ponto) — migra pra waypoints=[bend] se não vier `waypoints`
         textLabel,
+        startAnchor = null,
+        endAnchor = null,
         style,
     } = {}) {
         super("connector", {
@@ -69,8 +71,15 @@ export class Connector extends Element {
         this.endArrowType = normalizeArrowType(endArrowType ?? endArrow, "open");
         this.waypoints = waypoints ?? (bend ? [bend] : []);
         this.textLabel = defaultLabel({ fontSize: 12, ...textLabel });
+        this.startAnchor = startAnchor;
+        this.endAnchor = endAnchor;
         this._resolvedStart = startPoint;
         this._resolvedEnd = endPoint;
+    }
+
+    /** Ponto fixo (fração fx/fy do bbox, 0-1) — usado no lugar do edgeAnchorPoint dinâmico quando a ponta nasceu ou foi reconectada bem em cima de um ponto de conexão marcado (ver SelectTool._getBoxHandlePositions). */
+    _anchorPoint(bounds, anchor) {
+        return { x: bounds.x + anchor.fx * bounds.width, y: bounds.y + anchor.fy * bounds.height };
     }
 
     /** Bounds (mundo) do rótulo embutido, centrado no meio da rota resolvida — usado pelo TextEditor.js (ver `labelBounds`, checado por duck-typing). */
@@ -87,8 +96,16 @@ export class Connector extends Element {
         const endCenterOrPoint = endObj ? this._center(endObj.getBounds()) : this.endPoint;
         const startCenterOrPoint = startObj ? this._center(startObj.getBounds()) : this.startPoint;
 
-        const start = startObj ? edgeAnchorPoint(startObj.getBounds(), endCenterOrPoint) : this.startPoint;
-        const end = endObj ? edgeAnchorPoint(endObj.getBounds(), startCenterOrPoint) : this.endPoint;
+        const start = startObj
+            ? this.startAnchor
+                ? this._anchorPoint(startObj.getBounds(), this.startAnchor)
+                : edgeAnchorPoint(startObj.getBounds(), endCenterOrPoint)
+            : this.startPoint;
+        const end = endObj
+            ? this.endAnchor
+                ? this._anchorPoint(endObj.getBounds(), this.endAnchor)
+                : edgeAnchorPoint(endObj.getBounds(), startCenterOrPoint)
+            : this.endPoint;
 
         this._resolvedStart = start;
         this._resolvedEnd = end;
@@ -152,6 +169,8 @@ export class Connector extends Element {
             startArrowType: this.startArrowType,
             endArrowType: this.endArrowType,
             waypoints: this.waypoints,
+            startAnchor: this.startAnchor,
+            endAnchor: this.endAnchor,
         };
     }
 

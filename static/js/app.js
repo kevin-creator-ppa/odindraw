@@ -479,9 +479,18 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
     });
 
     // Arraste a partir de uma alça do item selecionado (SelectTool) — ver "connector-drag" no SelectTool.
-    eventBus.on("tool:connector-drawn", ({ startObjectId, startPoint, endObjectId, endPoint }) => {
+    eventBus.on("tool:connector-drawn", ({ startObjectId, startPoint, endObjectId, endPoint, startAnchor, endAnchor }) => {
         addAndSelect(
-            new Connector({ startObjectId, endObjectId, startPoint, endPoint, routeType: "straight", endArrow: true })
+            new Connector({
+                startObjectId,
+                endObjectId,
+                startPoint,
+                endPoint,
+                routeType: "straight",
+                endArrow: true,
+                startAnchor,
+                endAnchor,
+            })
         );
     });
 

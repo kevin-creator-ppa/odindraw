@@ -125,7 +125,7 @@ export class SelectTool extends Tool {
 
                 const handle = this._hitTestBoxHandle(context, single, screenPoint);
                 if (handle) {
-                    this._connectorDrag = { fromElement: single, fromWorldPoint: handle.worldPoint };
+                    this._connectorDrag = { fromElement: single, fromWorldPoint: handle.worldPoint, fromAnchor: handle.anchor };
                     return;
                 }
             }
@@ -274,11 +274,15 @@ export class SelectTool extends Tool {
                 const otherEndObjectId = kind === "start" ? element.endObjectId : element.startObjectId;
                 const validHit = hit && hit !== element && hit.id !== otherEndObjectId ? hit : null;
 
+                const anchor = validHit ? this._hitTestAnchorPoint(context, validHit, context.camera.worldToScreen(point.x, point.y)) : null;
+
                 if (kind === "start") {
                     element.startObjectId = validHit ? validHit.id : null;
+                    element.startAnchor = anchor;
                     if (!validHit) element.startPoint = this._snapToGrid(context, point);
                 } else {
                     element.endObjectId = validHit ? validHit.id : null;
+                    element.endAnchor = anchor;
                     if (!validHit) element.endPoint = this._snapToGrid(context, point);
                 }
             }
@@ -290,15 +294,20 @@ export class SelectTool extends Tool {
         }
 
         if (this._connectorDrag) {
-            const { fromElement, fromWorldPoint } = this._connectorDrag;
+            const { fromElement, fromWorldPoint, fromAnchor } = this._connectorDrag;
             const targetElement = context.scene.getObjectAtPoint(point);
             const endObjectId = targetElement && targetElement !== fromElement ? targetElement.id : null;
+            const endAnchor = endObjectId
+                ? this._hitTestAnchorPoint(context, targetElement, context.camera.worldToScreen(point.x, point.y))
+                : null;
 
             context.eventBus.emit("tool:connector-drawn", {
                 startObjectId: fromElement.id,
                 startPoint: fromWorldPoint,
                 endObjectId,
                 endPoint: point,
+                startAnchor: fromAnchor,
+                endAnchor,
             });
 
             this._connectorDrag = null;
@@ -572,23 +581,54 @@ export class SelectTool extends Tool {
             .find((h) => Math.hypot(screenPoint.x - h.screen.x, screenPoint.y - h.screen.y) <= HANDLE_HIT_RADIUS) ?? null;
     }
 
-    /** Pontos médios das 4 bordas do bbox (com offset pra fora) — arrastar cria um Connector. */
+    /**
+     * Pontos médios das 4 bordas do bbox (com offset pra fora) — arrastar
+     * cria um Connector. Cada um carrega seu `anchor` (fração do bbox,
+     * 0-1) — quando um Connector nasce ou é reconectado bem em cima de um
+     * desses pontos (de origem ou de destino), ele gruda ali fixo, em vez
+     * de deslizar dinamicamente pela borda mais próxima do outro extremo
+     * (ver Connector.resolveEndpoints).
+     */
     _getBoxHandlePositions(context, element) {
         const b = element.getBounds();
         const halfW = b.width / 2;
         const halfH = b.height / 2;
         const offset = HANDLE_OFFSET / context.camera.zoom;
         return [
-            this._localToScreen(context, element, 0, -halfH - offset),
-            this._localToScreen(context, element, halfW + offset, 0),
-            this._localToScreen(context, element, 0, halfH + offset),
-            this._localToScreen(context, element, -halfW - offset, 0),
+            { ...this._localToScreen(context, element, 0, -halfH - offset), anchor: { fx: 0.5, fy: 0 } },
+            { ...this._localToScreen(context, element, halfW + offset, 0), anchor: { fx: 1, fy: 0.5 } },
+            { ...this._localToScreen(context, element, 0, halfH + offset), anchor: { fx: 0.5, fy: 1 } },
+            { ...this._localToScreen(context, element, -halfW - offset, 0), anchor: { fx: 0, fy: 0.5 } },
         ];
     }
 
     _hitTestBoxHandle(context, element, screenPoint) {
         return this._getBoxHandlePositions(context, element).find(
             (h) => Math.hypot(screenPoint.x - h.x, screenPoint.y - h.y) <= HANDLE_HIT_RADIUS
+        );
+    }
+
+    /**
+     * Como _getBoxHandlePositions, mas nos pontos de verdade da borda (sem
+     * o offset pra fora usado só pro desenho da alça) — usado pra detectar
+     * se um Connector foi solto bem em cima de um ponto de conexão de
+     * outra forma (a própria forma precisa estar "embaixo" do cursor pro
+     * scene.getObjectAtPoint achá-la primeiro; ver onPointerUp).
+     */
+    _hitTestAnchorPoint(context, element, screenPoint) {
+        const b = element.getBounds();
+        const anchors = [
+            { fx: 0.5, fy: 0 },
+            { fx: 1, fy: 0.5 },
+            { fx: 0.5, fy: 1 },
+            { fx: 0, fy: 0.5 },
+        ];
+        return (
+            anchors.find((anchor) => {
+                const world = { x: b.x + anchor.fx * b.width, y: b.y + anchor.fy * b.height };
+                const s = context.camera.worldToScreen(world.x, world.y);
+                return Math.hypot(screenPoint.x - s.x, screenPoint.y - s.y) <= HANDLE_HIT_RADIUS;
+            }) ?? null
         );
     }
 
