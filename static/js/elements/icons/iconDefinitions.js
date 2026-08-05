@@ -252,6 +252,58 @@ export const ICONS = {
         { type: "path", d: "M 10 55 L 90 55 M 78 47 L 90 55 L 78 63" },
     ],
 
+    // BPMN
+    "bpmn-start": [{ type: "circle", cx: 50, cy: 50, r: 35 }],
+    "bpmn-end": [
+        { type: "circle", cx: 50, cy: 50, r: 35 },
+        { type: "circle", cx: 50, cy: 50, r: 28 },
+    ],
+    "bpmn-intermediate": [
+        { type: "circle", cx: 50, cy: 50, r: 35 },
+        { type: "circle", cx: 50, cy: 50, r: 29 },
+    ],
+    "bpmn-task": [{ type: "rect", x: 8, y: 22, w: 84, h: 56 }],
+    "bpmn-gateway-exclusive": [
+        { type: "polygon", points: [[50, 5], [95, 50], [50, 95], [5, 50]] },
+        { type: "line", x1: 36, y1: 36, x2: 64, y2: 64 },
+        { type: "line", x1: 64, y1: 36, x2: 36, y2: 64 },
+    ],
+    "bpmn-gateway-parallel": [
+        { type: "polygon", points: [[50, 5], [95, 50], [50, 95], [5, 50]] },
+        { type: "line", x1: 50, y1: 32, x2: 50, y2: 68 },
+        { type: "line", x1: 32, y1: 50, x2: 68, y2: 50 },
+    ],
+    "bpmn-pool": [
+        { type: "rect", x: 5, y: 15, w: 90, h: 70 },
+        { type: "line", x1: 25, y1: 15, x2: 25, y2: 85 },
+    ],
+
+    // Wireframe / mockup
+    "mockup-button": [
+        { type: "rect", x: 15, y: 35, w: 70, h: 30 },
+        { type: "line", x1: 30, y1: 50, x2: 70, y2: 50 },
+    ],
+    "mockup-input": [
+        { type: "rect", x: 10, y: 40, w: 80, h: 22 },
+        { type: "line", x1: 18, y1: 51, x2: 55, y2: 51 },
+    ],
+    "mockup-browser": [
+        { type: "rect", x: 5, y: 15, w: 90, h: 70 },
+        { type: "line", x1: 5, y1: 32, x2: 95, y2: 32 },
+        { type: "circle", cx: 15, cy: 23, r: 3, fill: true },
+        { type: "circle", cx: 25, cy: 23, r: 3, fill: true },
+        { type: "circle", cx: 35, cy: 23, r: 3, fill: true },
+    ],
+    "mockup-checkbox": [
+        { type: "rect", x: 15, y: 15, w: 30, h: 30 },
+        { type: "path", d: "M 21 30 L 28 38 L 40 20" },
+        { type: "line", x1: 55, y1: 30, x2: 90, y2: 30 },
+    ],
+    "mockup-progress": [
+        { type: "rect", x: 5, y: 42, w: 90, h: 16 },
+        { type: "rect", x: 5, y: 42, w: 55, h: 16, fill: true },
+    ],
+
     // Formas
     rectangle: [{ type: "rect", x: 10, y: 20, w: 80, h: 60 }],
     square: [{ type: "rect", x: 15, y: 15, w: 70, h: 70 }],

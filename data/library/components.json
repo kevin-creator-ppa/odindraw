@@ -82,6 +82,30 @@
         { "id": "cloud-function", "name": "Função (Serverless)" },
         { "id": "cloud-queue", "name": "Fila / Mensageria" }
       ]
+    },
+    {
+      "id": "bpmn",
+      "name": "BPMN",
+      "items": [
+        { "id": "bpmn-start", "name": "Evento de início" },
+        { "id": "bpmn-end", "name": "Evento de fim" },
+        { "id": "bpmn-intermediate", "name": "Evento intermediário" },
+        { "id": "bpmn-task", "name": "Tarefa" },
+        { "id": "bpmn-gateway-exclusive", "name": "Gateway exclusivo" },
+        { "id": "bpmn-gateway-parallel", "name": "Gateway paralelo" },
+        { "id": "bpmn-pool", "name": "Pool / raia" }
+      ]
+    },
+    {
+      "id": "mockup",
+      "name": "Wireframe / Mockup",
+      "items": [
+        { "id": "mockup-button", "name": "Botão" },
+        { "id": "mockup-input", "name": "Campo de texto" },
+        { "id": "mockup-browser", "name": "Janela do navegador" },
+        { "id": "mockup-checkbox", "name": "Caixa de seleção" },
+        { "id": "mockup-progress", "name": "Barra de progresso" }
+      ]
     }
   ]
 }
