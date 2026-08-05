@@ -1,21 +1,6 @@
-import { Scene } from "../core/Scene.js";
-import { elementFromJSON } from "../elements/elementFactory.js";
 import { buildSvgString } from "../io/svgBuilder.js";
+import { scenePreviewFromPageData } from "../io/scenePreview.js";
 import { applyIcons } from "./icons.js";
-
-/** Reconstrói uma Scene "descartável" só pra gerar o preview em SVG — não é a Scene de edição, então navegar entre páginas na apresentação não mexe em nada do documento sendo editado. */
-function scenePreviewFromPageData(data) {
-    const scene = new Scene();
-    if (Array.isArray(data?.layers) && data.layers.length > 0) {
-        scene.layers = data.layers.map((l) => ({ ...l }));
-        scene.activeLayerId = scene.layers.some((l) => l.id === data.active_layer_id) ? data.active_layer_id : scene.layers[0].id;
-    }
-    [...(data?.objects ?? []), ...(data?.connections ?? [])].forEach((raw) => {
-        const element = elementFromJSON(raw);
-        if (element) scene.restoreObject(element);
-    });
-    return scene;
-}
 
 /** Modo apresentação: overlay em tela cheia cicla pelas páginas do documento (setas/clique, Esc pra sair). */
 export class PresentationMode {

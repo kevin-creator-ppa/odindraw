@@ -127,7 +127,7 @@ function initPropertiesPanelToggle() {
 }
 
 /** Liga os 3 itens do dropdown Exportar; avisa se não há nada desenhado ainda. */
-function initExportActions({ scene, saveLoad }) {
+function initExportActions({ scene, pageManager }) {
     const guardEmptyScene = () => {
         if (scene.objects.length === 0) {
             window.alert("Não há nada para exportar ainda.");
@@ -158,47 +158,64 @@ function initExportActions({ scene, saveLoad }) {
 
     document.querySelector('[data-action="export-drawio"]').addEventListener("click", () => {
         if (guardEmptyScene()) return;
-        exportDrawio(scene, saveLoad.diagramName);
+        exportDrawio(pageManager);
     });
 }
 
-/** Inserir imagem: abre o seletor de arquivo nativo, lê como data URI (FileReader) e cria um ImageElement do tamanho da imagem (reduzido se for grande), centralizado no viewport atual. */
-function initInsertImage({ scene, camera, renderer, selectionManager, toolManager, historyManager }) {
-    const MAX_SIDE = 300;
+const IMAGE_MAX_SIDE = 300;
+
+/** Lê `file` como data URI e cria um ImageElement do tamanho da imagem (reduzido se for grande), centralizado no viewport atual — compartilhado por "Inserir imagem" (seletor de arquivo) e colar (Ctrl+V com imagem na área de transferência do sistema). */
+function createImageFromFile(file, { scene, camera, renderer, selectionManager, toolManager, historyManager }) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const probe = new Image();
+        probe.onload = () => {
+            const scale = Math.min(1, IMAGE_MAX_SIDE / Math.max(probe.naturalWidth, probe.naturalHeight));
+            const width = Math.round(probe.naturalWidth * scale);
+            const height = Math.round(probe.naturalHeight * scale);
+            const center = camera.screenToWorld(renderer.width / 2, renderer.height / 2);
+
+            const image = new ImageElement({
+                src: reader.result,
+                x: center.x - width / 2,
+                y: center.y - height / 2,
+                width,
+                height,
+            });
+            scene.addObject(image);
+            renderer.markDirty();
+            selectionManager.select(image);
+            toolManager.setActiveTool("select");
+            historyManager?.pushSnapshot();
+        };
+        probe.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+/** Inserir imagem: abre o seletor de arquivo nativo do sistema. */
+function initInsertImage(engine) {
     const input = document.querySelector("[data-image-input]");
-
     document.querySelector('[data-action="insert-image"]').addEventListener("click", () => input.click());
-
     input.addEventListener("change", () => {
         const file = input.files[0];
         input.value = "";
+        if (file) createImageFromFile(file, engine);
+    });
+}
+
+/** Ctrl+V com uma imagem na área de transferência do sistema (print screen, "copiar imagem" do navegador...) insere ela — não interfere no Ctrl+V de elementos copiados internamente (managers/clipboard.js), que não usa o evento nativo "paste". */
+function initPasteImage(engine) {
+    document.addEventListener("paste", (event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return;
+        const imageItem = [...items].find((item) => item.type.startsWith("image/"));
+        if (!imageItem) return;
+        const file = imageItem.getAsFile();
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            const probe = new Image();
-            probe.onload = () => {
-                const scale = Math.min(1, MAX_SIDE / Math.max(probe.naturalWidth, probe.naturalHeight));
-                const width = Math.round(probe.naturalWidth * scale);
-                const height = Math.round(probe.naturalHeight * scale);
-                const center = camera.screenToWorld(renderer.width / 2, renderer.height / 2);
-
-                const image = new ImageElement({
-                    src: reader.result,
-                    x: center.x - width / 2,
-                    y: center.y - height / 2,
-                    width,
-                    height,
-                });
-                scene.addObject(image);
-                renderer.markDirty();
-                selectionManager.select(image);
-                toolManager.setActiveTool("select");
-                historyManager?.pushSnapshot();
-            };
-            probe.src = reader.result;
-        };
-        reader.readAsDataURL(file);
+        event.preventDefault();
+        createImageFromFile(file, engine);
     });
 }
 
@@ -820,6 +837,7 @@ function init() {
     initMainMenu();
     initExportActions(engine);
     initInsertImage(engine);
+    initPasteImage(engine);
     initPageSetup(engine);
     initPrint(engine);
     initDropdownAutoClose();

@@ -1,6 +1,7 @@
 import { resolveInkColor } from "../ui/theme.js";
 import { downloadBlob } from "./download.js";
 import { LINE_TYPES } from "../elements/typeGroups.js";
+import { scenePreviewFromPageData } from "./scenePreview.js";
 
 /**
  * Exporta o diagrama pro formato .drawio (XML mxGraph), abrível no
@@ -8,7 +9,10 @@ import { LINE_TYPES } from "../elements/typeGroups.js";
  * objetivo é tirar o diagrama daqui pra usar em outro lugar, não
  * substituir o formato JSON nativo (usado por salvar/abrir).
  *
- * Exporta só a página atual (mesmo escopo de exportar PNG/SVG/PDF).
+ * Exporta TODAS as páginas do documento, uma <diagram> por página
+ * dentro do mesmo <mxfile> — é assim que o próprio draw.io representa
+ * documentos de múltiplas páginas.
+ *
  * Mapeia cada tipo de Element pro estilo mxCell mais parecido; formas
  * sem equivalente direto (ícones da biblioteca, tabelas) viram uma
  * aproximação razoável (retângulo com o rótulo, grade de retângulos),
@@ -145,16 +149,16 @@ function cellFor(el) {
     return shapeCell(el);
 }
 
-export function buildDrawioXml(scene, diagramName = "Sem título") {
+function buildDiagramBody(scene) {
     const visible = scene.objects
         .filter((el) => scene.isElementVisible(el))
         .sort((a, b) => scene.stackCompare(a, b));
     visible.forEach((el) => el.beforeHitTest(scene));
+    return visible.map(cellFor).join("\n");
+}
 
-    const body = visible.map(cellFor).join("\n");
-
-    return `<mxfile host="OdinDraw">
-  <diagram name="${escapeXml(diagramName)}">
+function diagramXml(id, name, body) {
+    return `<diagram id="${escapeXml(id)}" name="${escapeXml(name)}">
     <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -162,11 +166,29 @@ export function buildDrawioXml(scene, diagramName = "Sem título") {
 ${body}
       </root>
     </mxGraphModel>
-  </diagram>
+  </diagram>`;
+}
+
+/** Uma página só (usado internamente e por quem só tem uma Scene em mãos, sem PageManager). */
+export function buildDrawioXml(scene, diagramName = "Sem título") {
+    return `<mxfile host="OdinDraw">
+  ${diagramXml("page_1", diagramName, buildDiagramBody(scene))}
 </mxfile>`;
 }
 
-export function exportDrawio(scene, diagramName, filename = "diagrama.drawio") {
-    const xml = buildDrawioXml(scene, diagramName);
+/** Documento inteiro: uma <diagram> por página do PageManager (cada uma já leva seu próprio nome). Reconstrói cada página numa Scene descartável a partir do `data` já serializado — não toca a Scene de edição. */
+export function buildDrawioDocument(pageManager) {
+    pageManager.captureActivePage();
+    const diagrams = pageManager.pages
+        .map((page) => diagramXml(page.id, page.name, buildDiagramBody(scenePreviewFromPageData(page.data))))
+        .join("\n  ");
+
+    return `<mxfile host="OdinDraw">
+  ${diagrams}
+</mxfile>`;
+}
+
+export function exportDrawio(pageManager, filename = "diagrama.drawio") {
+    const xml = buildDrawioDocument(pageManager);
     downloadBlob(new Blob([xml], { type: "application/xml" }), filename);
 }
