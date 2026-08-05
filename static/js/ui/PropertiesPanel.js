@@ -59,6 +59,8 @@ export class PropertiesPanel {
         this._populateMarkerOptions(this.endArrowType);
         this.flipHBtn = document.querySelector('[data-prop="flip-h"]');
         this.flipVBtn = document.querySelector('[data-prop="flip-v"]');
+        this.roundedBtn = document.querySelector('[data-prop="rounded"]');
+        this.shadowBtn = document.querySelector('[data-prop="shadow"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
 
@@ -80,6 +82,8 @@ export class PropertiesPanel {
             this.endArrowType,
             this.flipHBtn,
             this.flipVBtn,
+            this.roundedBtn,
+            this.shadowBtn,
             this.lockBtn,
             this.visibleBtn,
             ...this.alignButtons,
@@ -96,6 +100,7 @@ export class PropertiesPanel {
         this._resizableOnlyRows = document.querySelectorAll("[data-resizable-only]");
         this._tableOnlyRows = document.querySelectorAll("[data-table-only]");
         this._multiOnlyRows = document.querySelectorAll("[data-multi-only]");
+        this._roundedOnlyRows = document.querySelectorAll("[data-rounded-only]");
         this._textEmptyHint = document.querySelector("[data-text-empty-hint]");
 
         this._bindTabs();
@@ -196,6 +201,8 @@ export class PropertiesPanel {
 
         this._bindBooleanToggle(this.flipHBtn, "flipX");
         this._bindBooleanToggle(this.flipVBtn, "flipY");
+        this._bindBooleanToggle(this.roundedBtn, "rounded");
+        this._bindStyleBooleanToggle(this.shadowBtn, "shadow");
 
         this.alignButtons.forEach((button) => {
             button.addEventListener("click", () => {
@@ -286,6 +293,15 @@ export class PropertiesPanel {
                 el.autoSize?.();
             });
             button.classList.toggle("segmented__active", Boolean(this._current?.[key]));
+            this._commit();
+        });
+    }
+
+    /** Como _bindBooleanToggle, mas o campo mora em style (ex.: shadow) — style sempre existe, então não precisa do guard de "undefined". */
+    _bindStyleBooleanToggle(button, key) {
+        button.addEventListener("click", () => {
+            this._apply((el) => (el.style[key] = !el.style[key]));
+            button.classList.toggle("segmented__active", Boolean(this._current?.style[key]));
             this._commit();
         });
     }
@@ -451,6 +467,8 @@ export class PropertiesPanel {
 
         this.flipHBtn.classList.toggle("segmented__active", Boolean(element.flipX));
         this.flipVBtn.classList.toggle("segmented__active", Boolean(element.flipY));
+        this.roundedBtn.classList.toggle("segmented__active", Boolean(element.rounded));
+        this.shadowBtn.classList.toggle("segmented__active", Boolean(element.style.shadow));
     }
 
     _toggleTypeSpecificRows(element, selectionCount) {
@@ -464,6 +482,7 @@ export class PropertiesPanel {
         this._resizableOnlyRows.forEach((row) => (row.hidden = !isResizable));
         this._tableOnlyRows.forEach((row) => (row.hidden = !isTable));
         this._multiOnlyRows.forEach((row) => (row.hidden = selectionCount < 2));
+        this._roundedOnlyRows.forEach((row) => (row.hidden = element?.type !== "rectangle"));
         this._textEmptyHint.hidden = !element || isText;
     }
 

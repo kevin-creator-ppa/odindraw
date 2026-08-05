@@ -16,6 +16,7 @@ function defaultStyle() {
         strokeWidth: 2,
         strokeStyle: "solid",
         opacity: 1,
+        shadow: false,
     };
 }
 
@@ -113,6 +114,12 @@ export class Element {
 
         ctx.save();
         this.applyStyle(ctx);
+        if (this.style.shadow) {
+            ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
+            ctx.shadowBlur = 8 * camera.zoom;
+            ctx.shadowOffsetX = 3 * camera.zoom;
+            ctx.shadowOffsetY = 3 * camera.zoom;
+        }
         ctx.translate(topLeft.x + w / 2, topLeft.y + h / 2);
         ctx.rotate((this.rotation * Math.PI) / 180);
         ctx.scale(this.flipX ? -1 : 1, this.flipY ? -1 : 1);
