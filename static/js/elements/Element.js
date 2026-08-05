@@ -43,6 +43,7 @@ export class Element {
         this.groupId = null;
         this.layerId = null;
         this.link = null;
+        this.containerId = null;
         this.style = { ...defaultStyle(), ...style };
     }
 
@@ -177,6 +178,7 @@ export class Element {
             groupId: this.groupId,
             layerId: this.layerId,
             link: this.link,
+            containerId: this.containerId,
             style: { ...this.style },
             ...(this.textLabel ? { textLabel: { ...this.textLabel } } : {}),
         };

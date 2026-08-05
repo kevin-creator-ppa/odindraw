@@ -15,6 +15,7 @@ import { Component } from "./Component.js";
 import { Table } from "./Table.js";
 import { Comment } from "./Comment.js";
 import { ImageElement } from "./Image.js";
+import { Container } from "./Container.js";
 
 const CONSTRUCTORS = {
     rectangle: Rectangle,
@@ -34,6 +35,7 @@ const CONSTRUCTORS = {
     table: Table,
     comment: Comment,
     image: ImageElement,
+    container: Container,
 };
 
 /**
@@ -54,5 +56,6 @@ export function elementFromJSON(data) {
     element.groupId = data.groupId ?? null;
     element.layerId = data.layerId ?? null;
     element.link = data.link ?? null;
+    element.containerId = data.containerId ?? null;
     return element;
 }

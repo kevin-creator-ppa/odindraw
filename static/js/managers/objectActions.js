@@ -19,16 +19,26 @@ function remapGroupIds(elements) {
     return elements;
 }
 
+/** Se o container de um elemento também estiver no lote duplicado, a cópia fica dentro da cópia do container; senão, continua no mesmo container original de sempre (comportamento óbvio: só o filho foi duplicado, não "mudou de casa"). Exportado pra clipboard.js reaproveitar no copiar/colar. */
+export function remapContainerIds(elements, idMap) {
+    elements.forEach((el) => {
+        if (el.containerId && idMap.has(el.containerId)) el.containerId = idMap.get(el.containerId);
+    });
+}
+
 export function duplicateSelected({ scene, selectionManager, renderer, historyManager }) {
     const selected = selectionManager.getSelected();
     if (selected.length === 0) return;
 
+    const idMap = new Map();
     const clones = selected.map((el) => {
         const clone = el.clone();
         clone.translate(20, 20);
-        scene.addObject(clone);
+        idMap.set(el.id, clone.id);
         return clone;
     });
+    remapContainerIds(clones, idMap);
+    clones.forEach((clone) => scene.addObject(clone));
     remapGroupIds(clones);
     selectionManager.selectMultiple(clones);
     renderer.markDirty();

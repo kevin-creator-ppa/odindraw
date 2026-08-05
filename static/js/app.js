@@ -56,6 +56,7 @@ import { FreehandTool } from "./tools/FreehandTool.js";
 import { EraserTool } from "./tools/EraserTool.js";
 import { TableTool } from "./tools/TableTool.js";
 import { CommentTool } from "./tools/CommentTool.js";
+import { ContainerTool } from "./tools/ContainerTool.js";
 import { Rectangle } from "./elements/Rectangle.js";
 import { Ellipse } from "./elements/Ellipse.js";
 import { Diamond } from "./elements/Diamond.js";
@@ -73,6 +74,7 @@ import { Table } from "./elements/Table.js";
 import { Comment } from "./elements/Comment.js";
 import { sketchState } from "./elements/sketch.js";
 import { ImageElement } from "./elements/Image.js";
+import { Container } from "./elements/Container.js";
 
 const THEME_STORAGE_KEY = "odindraw:theme";
 const ZOOM_STEP = 1.2;
@@ -332,6 +334,7 @@ function initCanvasEngine() {
             new EraserTool(),
             new TableTool(),
             new CommentTool(),
+            new ContainerTool(),
         ],
     });
 
@@ -543,6 +546,9 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
                 break;
             case "comment":
                 addAndSelect(new Comment(normalizeShapeBounds(start, end)));
+                break;
+            case "container":
+                addAndSelect(new Container(normalizeShapeBounds(start, end)));
                 break;
             case "line":
                 addAndSelect(

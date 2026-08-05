@@ -58,6 +58,15 @@ export class Scene {
         this.objects = this.objects.filter((o) => o !== element);
         this.selection.delete(element);
         this._detachConnectors(element);
+        this._detachContainerChildren(element);
+    }
+
+    /** Filhos de um container removido continuam soltos onde estavam, em vez de apontar pra um container que não existe mais. */
+    _detachContainerChildren(removed) {
+        if (removed.type !== "container") return;
+        this.objects.forEach((el) => {
+            if (el.containerId === removed.id) el.containerId = null;
+        });
     }
 
     /** Conectores ligados ao elemento removido ficam soltos na última posição resolvida, em vez de quebrar. */

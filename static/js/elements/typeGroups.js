@@ -12,4 +12,5 @@ export const RESIZABLE_TYPES = new Set([
     "table",
     "comment",
     "image",
+    "container",
 ]);

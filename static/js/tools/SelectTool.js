@@ -154,7 +154,12 @@ export class SelectTool extends Tool {
             }
 
             const selected = context.selectionManager.getSelected();
-            this._dragTargets = selected
+            const dragSet = new Set(selected);
+            selected.forEach((el) => {
+                if (el.type !== "container") return;
+                context.scene.objects.filter((o) => o.containerId === el.id).forEach((child) => dragSet.add(child));
+            });
+            this._dragTargets = [...dragSet]
                 .filter((el) => !context.scene.isElementLocked(el))
                 .map((el) => ({ element: el, originXY: { x: el.x, y: el.y } }));
             this._dragPrimary =
@@ -364,6 +369,7 @@ export class SelectTool extends Tool {
         }
 
         if (this._dragTargets && this._moved) {
+            this._updateContainerMembership(context);
             context.historyManager?.pushSnapshot();
         }
         this._dragTargets = null;
@@ -372,6 +378,34 @@ export class SelectTool extends Tool {
         this._moved = false;
         this._activeGuides = null;
         this._redrawOverlay(context);
+    }
+
+    /**
+     * Depois de um arraste, reavalia em qual container (se algum) cada
+     * elemento DIRETAMENTE selecionado pelo usuário ficou — não os
+     * filhos que vieram "de brinde" por pertencerem a um container
+     * arrastado junto, esses continuam com o mesmo pai de sempre. Um
+     * elemento entra num container quando seu centro é solto dentro do
+     * corpo dele (abaixo do cabeçalho).
+     */
+    _updateContainerMembership(context) {
+        const containers = context.scene.objects.filter((o) => o.type === "container");
+        if (containers.length === 0) return;
+
+        context.selectionManager.getSelected().forEach((el) => {
+            if (el.type === "container") return;
+            const cx = el.x + el.width / 2;
+            const cy = el.y + el.height / 2;
+            const host = containers.find(
+                (c) =>
+                    c !== el &&
+                    cx >= c.x &&
+                    cx <= c.x + c.width &&
+                    cy >= c.y + c._headerHeight(c.height) &&
+                    cy <= c.y + c.height
+            );
+            el.containerId = host ? host.id : null;
+        });
     }
 
     /** Retângulo normalizado (largura/altura sempre positivas) do arraste de marquee atual. */
