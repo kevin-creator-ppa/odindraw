@@ -677,6 +677,92 @@
     color: var(--accent);
 }
 
+/* Modo apresentação */
+.presentation-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #111214;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.presentation-overlay__stage {
+    max-width: 92vw;
+    max-height: 88vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.presentation-overlay__stage svg {
+    max-width: 92vw;
+    max-height: 88vh;
+    background: #ffffff;
+    border-radius: 4px;
+}
+
+.presentation-overlay__empty {
+    color: #cfcfd4;
+    font-size: 14px;
+}
+
+.presentation-overlay__close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #f4f4f5;
+}
+
+.presentation-overlay__close:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.presentation-overlay__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #f4f4f5;
+}
+
+.presentation-overlay__nav:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.presentation-overlay__nav--prev {
+    left: 20px;
+}
+
+.presentation-overlay__nav--next {
+    right: 20px;
+}
+
+.presentation-overlay__counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #cfcfd4;
+    font-size: 12.5px;
+}
+
 /* Painel de localizar/substituir */
 .find-panel {
     position: absolute;
