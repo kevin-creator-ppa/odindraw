@@ -677,6 +677,77 @@
     color: var(--accent);
 }
 
+/* Painel de localizar/substituir */
+.find-panel {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 260px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+    z-index: 15;
+    overflow: hidden;
+}
+
+.find-panel[hidden] {
+    display: none;
+}
+
+.find-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 8px 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.find-panel__title {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.find-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.find-panel__body input[type="text"] {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-app);
+    color: var(--text-primary);
+    font-size: 12.5px;
+}
+
+.find-panel__actions {
+    display: flex;
+    gap: 6px;
+}
+
+.find-panel__actions button {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.find-panel__actions button:hover {
+    background: var(--bg-hover);
+}
+
+.find-panel__result {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+}
+
 /* Painel de camadas */
 .layers-panel {
     position: absolute;

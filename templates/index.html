@@ -134,6 +134,7 @@
             <div class="tool-group">
                 <button class="tool" data-action="toggle-library" data-icon="library" title="Biblioteca de componentes"></button>
                 <button class="tool" data-action="toggle-layers" data-icon="layers" title="Camadas"></button>
+                <button class="tool" data-action="toggle-find" data-icon="search" title="Localizar e substituir (Ctrl+F)"></button>
             </div>
         </aside>
 
@@ -145,6 +146,23 @@
             </div>
             <div class="library-panel__body" data-library-body>
                 <p class="dropdown__empty">Carregando…</p>
+            </div>
+        </aside>
+
+        <!-- Painel flutuante de localizar/substituir -->
+        <aside class="find-panel" data-find-panel hidden>
+            <div class="find-panel__header">
+                <span class="find-panel__title">Localizar e substituir</span>
+                <button class="btn btn--icon" data-action="close-find" data-icon="close" title="Fechar"></button>
+            </div>
+            <div class="find-panel__body">
+                <input type="text" placeholder="Localizar…" data-find-search>
+                <input type="text" placeholder="Substituir por…" data-find-replace>
+                <div class="find-panel__actions">
+                    <button data-action="find-next">Próximo</button>
+                    <button data-action="replace-all">Substituir tudo</button>
+                </div>
+                <span class="find-panel__result" data-find-result></span>
             </div>
         </aside>
 

@@ -21,6 +21,7 @@ import { FileMenu } from "./ui/FileMenu.js";
 import { LibraryPanel } from "./ui/LibraryPanel.js";
 import { LayersPanel } from "./ui/LayersPanel.js";
 import { PagesBar } from "./ui/PagesBar.js";
+import { FindReplace } from "./ui/FindReplace.js";
 import { Minimap } from "./ui/Minimap.js";
 import { ContextMenu } from "./ui/ContextMenu.js";
 import { ShortcutsModal } from "./ui/ShortcutsModal.js";
@@ -841,6 +842,7 @@ function init() {
     new LibraryPanel(engine);
     new LayersPanel(engine);
     new PagesBar(engine);
+    new FindReplace(engine);
     new Minimap(engine);
     new ContextMenu(engine);
     new ShortcutsModal();
