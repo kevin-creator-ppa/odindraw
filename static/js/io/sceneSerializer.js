@@ -1,4 +1,5 @@
 import { elementFromJSON } from "../elements/elementFactory.js";
+import { DEFAULT_PAGE_SIZE } from "../core/Renderer.js";
 
 /**
  * Captura/aplica o estado de uma página (Scene + Camera + grade do
@@ -17,6 +18,8 @@ export function captureSceneState({ scene, camera, renderer }) {
             offset_x: camera.offsetX,
             offset_y: camera.offsetY,
             grid_enabled: renderer.gridEnabled,
+            page_width: renderer.pageSize.width,
+            page_height: renderer.pageSize.height,
         },
         layers: scene.layers.map((l) => ({ ...l })),
         active_layer_id: scene.activeLayerId,
@@ -42,4 +45,8 @@ export function applySceneState({ scene, camera, renderer }, data = {}) {
     camera.offsetX = data.canvas?.offset_x ?? 0;
     camera.offsetY = data.canvas?.offset_y ?? 0;
     renderer.setGridEnabled(data.canvas?.grid_enabled ?? true);
+    renderer.setPageSize({
+        width: data.canvas?.page_width ?? DEFAULT_PAGE_SIZE.width,
+        height: data.canvas?.page_height ?? DEFAULT_PAGE_SIZE.height,
+    });
 }

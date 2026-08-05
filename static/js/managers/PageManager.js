@@ -1,4 +1,5 @@
 import { captureSceneState, applySceneState } from "../io/sceneSerializer.js";
+import { DEFAULT_PAGE_SIZE } from "../core/Renderer.js";
 
 let pageCounter = 0;
 
@@ -83,6 +84,7 @@ export class PageManager {
         this.scene.clear();
         this.camera.reset();
         this.renderer.setGridEnabled(true);
+        this.renderer.setPageSize({ ...DEFAULT_PAGE_SIZE });
         const page = { id: nextPageId(), name: "Página 1", data: null };
         this.pages = [page];
         this.activePageId = page.id;

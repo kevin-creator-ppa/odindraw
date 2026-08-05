@@ -4,6 +4,7 @@ import { animationState } from "../elements/animationState.js";
 export const BASE_GRID_SPACING = 24;
 const MIN_SCREEN_SPACING = 8;
 const MAX_SCREEN_SPACING = 64;
+export const DEFAULT_PAGE_SIZE = { width: 850, height: 1100 }; // Carta (letter), em unidades de mundo
 
 /**
  * Desenha a cena em duas camadas de canvas:
@@ -27,6 +28,7 @@ export class Renderer {
         this.interactiveCtx = interactiveCanvas.getContext("2d");
 
         this.gridEnabled = true;
+        this.pageSize = { ...DEFAULT_PAGE_SIZE };
         this.width = 0;
         this.height = 0;
         this.dpr = window.devicePixelRatio || 1;
@@ -46,6 +48,11 @@ export class Renderer {
 
     setGridEnabled(enabled) {
         this.gridEnabled = enabled;
+        this.markDirty();
+    }
+
+    setPageSize(size) {
+        this.pageSize = size;
         this.markDirty();
     }
 
@@ -90,6 +97,7 @@ export class Renderer {
         ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
         ctx.clearRect(0, 0, this.width, this.height);
 
+        this._drawPageBoundary(ctx);
         if (this.gridEnabled) {
             this._drawGrid(ctx);
         }
@@ -103,6 +111,19 @@ export class Renderer {
         for (const element of visible) {
             element.render(ctx, this.camera, this.scene);
         }
+    }
+
+    /** Moldura tracejada mostrando os limites da página (referência pra impressão/exportação) — não recorta nem afeta o desenho, é só visual. */
+    _drawPageBoundary(ctx) {
+        const topLeft = this.camera.worldToScreen(0, 0);
+        const bottomRight = this.camera.worldToScreen(this.pageSize.width, this.pageSize.height);
+
+        ctx.save();
+        ctx.strokeStyle = getComputedStyle(this.container).getPropertyValue("--border-color").trim() || "#c9c9d1";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+        ctx.restore();
     }
 
     _drawGrid(ctx) {

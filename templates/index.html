@@ -66,6 +66,27 @@
                                 <button data-action="set-theme-dark" data-icon="moon" title="Escuro"></button>
                             </div>
                         </div>
+                        <span class="menu-divider"></span>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Página</span>
+                            <select data-page-size>
+                                <option value="850x1100">Carta</option>
+                                <option value="794x1123">A4</option>
+                                <option value="850x1400">Ofício</option>
+                                <option value="1100x1700">Tabloide</option>
+                            </select>
+                        </div>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Orientação</span>
+                            <div class="segmented segmented--compact">
+                                <button data-action="page-portrait">Retrato</button>
+                                <button data-action="page-landscape">Paisagem</button>
+                            </div>
+                        </div>
+                        <button class="menu-item" data-action="print" title="Imprimir">
+                            <span class="menu-item__icon" data-icon="file-text"></span>
+                            <span class="menu-item__label">Imprimir</span>
+                        </button>
                     </div>
                 </div>
                 <span class="brand">OdinDraw</span>

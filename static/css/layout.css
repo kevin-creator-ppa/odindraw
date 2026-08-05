@@ -228,6 +228,15 @@
     background: transparent;
 }
 
+.menu-item--static select {
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
 .menu-divider {
     display: block;
     height: 1px;

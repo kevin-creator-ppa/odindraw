@@ -30,7 +30,7 @@ import { exportPng } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
 import { exportDrawio } from "./io/ExportDrawio.js";
-import { computeSceneBounds, computeElementsBounds } from "./io/svgBuilder.js";
+import { computeSceneBounds, computeElementsBounds, buildSvgString } from "./io/svgBuilder.js";
 import { extractStyle, applyStyle } from "./managers/styleClipboard.js";
 import { copySelection, pasteClipboard } from "./managers/clipboard.js";
 import { clamp } from "./utils/geometry.js";
@@ -196,6 +196,71 @@ function initInsertImage({ scene, camera, renderer, selectionManager, toolManage
             probe.src = reader.result;
         };
         reader.readAsDataURL(file);
+    });
+}
+
+const PAGE_SIZE_PRESETS = {
+    "850x1100": [850, 1100],
+    "794x1123": [794, 1123],
+    "850x1400": [850, 1400],
+    "1100x1700": [1100, 1700],
+};
+
+/** Tamanho/orientação de página (menu principal): a moldura tracejada no canvas (ver Renderer._drawPageBoundary) é só referência visual, não recorta nada. */
+function initPageSetup({ renderer, eventBus }) {
+    const select = document.querySelector("[data-page-size]");
+    const portraitBtn = document.querySelector('[data-action="page-portrait"]');
+    const landscapeBtn = document.querySelector('[data-action="page-landscape"]');
+
+    const syncControls = () => {
+        const { width, height } = renderer.pageSize;
+        const isLandscape = width > height;
+        const [w, h] = isLandscape ? [height, width] : [width, height];
+        const key = Object.entries(PAGE_SIZE_PRESETS).find(([, [pw, ph]]) => pw === w && ph === h)?.[0];
+        if (key) select.value = key;
+        portraitBtn.classList.toggle("segmented__active", !isLandscape);
+        landscapeBtn.classList.toggle("segmented__active", isLandscape);
+    };
+
+    const applySize = () => {
+        const [w, h] = PAGE_SIZE_PRESETS[select.value];
+        const isLandscape = landscapeBtn.classList.contains("segmented__active");
+        renderer.setPageSize({ width: isLandscape ? h : w, height: isLandscape ? w : h });
+    };
+
+    select.addEventListener("change", applySize);
+    portraitBtn.addEventListener("click", () => {
+        portraitBtn.classList.add("segmented__active");
+        landscapeBtn.classList.remove("segmented__active");
+        applySize();
+    });
+    landscapeBtn.addEventListener("click", () => {
+        landscapeBtn.classList.add("segmented__active");
+        portraitBtn.classList.remove("segmented__active");
+        applySize();
+    });
+
+    eventBus.on("pages:change", syncControls);
+    syncControls();
+}
+
+/** Abre o SVG do diagrama numa aba nova e chama o diálogo de impressão do navegador — mais simples e confiável do que tentar imprimir a própria UI do app. */
+function initPrint({ scene }) {
+    document.querySelector('[data-action="print"]').addEventListener("click", () => {
+        if (scene.objects.length === 0) {
+            window.alert("Não há nada para imprimir ainda.");
+            return;
+        }
+        const svg = buildSvgString(scene);
+        const win = window.open("", "_blank");
+        if (!win) {
+            window.alert("O navegador bloqueou a janela de impressão (pop-up). Permita pop-ups pra este site.");
+            return;
+        }
+        win.document.write(`<!doctype html><html><head><title>Imprimir diagrama</title></head><body style="margin:0">${svg}</body></html>`);
+        win.document.close();
+        win.focus();
+        win.print();
     });
 }
 
@@ -733,6 +798,8 @@ function init() {
     initMainMenu();
     initExportActions(engine);
     initInsertImage(engine);
+    initPageSetup(engine);
+    initPrint(engine);
     initDropdownAutoClose();
     document.addEventListener("odindraw:image-loaded", () => engine.renderer.markDirty());
     initPropertiesPanelToggle();
