@@ -119,13 +119,28 @@ function initMainMenu() {
     });
 }
 
-/** Recolhe/expande o painel de propriedades (sidebar direita). */
-function initPropertiesPanelToggle() {
+/**
+ * Recolhe/expande o painel de propriedades (sidebar direita). Some por
+ * padrão; abre sozinho ao selecionar algo no canvas e fecha sozinho ao
+ * desselecionar — o botão continua funcionando a qualquer momento como
+ * override manual (inclusive pra abrir sem nada selecionado).
+ */
+function initPropertiesPanelToggle({ eventBus }) {
     const button = document.querySelector('[data-action="toggle-properties-panel"]');
-    button.addEventListener("click", () => {
-        const collapsed = document.querySelector(".app").classList.toggle("app--properties-collapsed");
+    const appEl = document.querySelector(".app");
+
+    const setCollapsed = (collapsed) => {
+        appEl.classList.toggle("app--properties-collapsed", collapsed);
         button.setAttribute("data-active", String(!collapsed));
+    };
+
+    setCollapsed(true);
+
+    button.addEventListener("click", () => {
+        setCollapsed(!appEl.classList.contains("app--properties-collapsed"));
     });
+
+    eventBus.on("selection:change", (selected) => setCollapsed(selected.length === 0));
 }
 
 /** Liga os 3 itens do dropdown Exportar; avisa se não há nada desenhado ainda. */
@@ -873,7 +888,7 @@ function init() {
     initPrint(engine);
     initDropdownAutoClose();
     document.addEventListener("odindraw:image-loaded", () => engine.renderer.markDirty());
-    initPropertiesPanelToggle();
+    initPropertiesPanelToggle(engine);
     initZoomControls(engine);
     initGridToggle(engine.renderer);
     initSketchToggle(engine.renderer);
