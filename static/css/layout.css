@@ -352,6 +352,53 @@
     color: var(--text-secondary);
 }
 
+/* Divulgação progressiva no painel de propriedades (estilo Excalidraw): controles do dia a dia ficam sempre visíveis, o resto entra aqui fechado por padrão. */
+.tab-panel__more {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.tab-panel__more > summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+}
+
+.tab-panel__more > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tab-panel__more > summary::before {
+    content: "\25B8";
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.tab-panel__more[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.tab-panel__more > summary:hover {
+    color: var(--text-primary);
+}
+
+.tab-panel__more[open] {
+    gap: 10px;
+}
+
+.tab-panel__more > .property:first-of-type {
+    margin-top: 4px;
+}
+
 .size-inputs {
     display: flex;
     align-items: center;
