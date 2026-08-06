@@ -437,15 +437,35 @@ function initSketchToggle(renderer) {
     });
 }
 
+/** Ferramentas menos usadas (formas exóticas, borracha...) ficam escondidas atrás do botão "Mais formas" — a coluna principal tinha crescido demais. O botão acende quando a ferramenta ativa é uma das de dentro do flyout, pra não sumir a indicação de "qual tá selecionada". */
 function initToolSelection(toolManager) {
     const buttons = Array.from(document.querySelectorAll(".tool[data-tool]"));
+    const moreShapesBtn = document.querySelector('[data-action="toggle-more-shapes"]');
+    const moreShapesPanel = document.querySelector("[data-more-shapes-panel]");
+    const moreShapesToolNames = new Set(
+        Array.from(moreShapesPanel.querySelectorAll(".tool[data-tool]")).map((button) => button.dataset.tool)
+    );
 
     const setActiveButton = (name) => {
         buttons.forEach((button) => button.classList.toggle("tool--active", button.dataset.tool === name));
+        moreShapesBtn.classList.toggle("tool--active", moreShapesToolNames.has(name));
     };
 
     buttons.forEach((button) => {
-        button.addEventListener("click", () => toolManager.setActiveTool(button.dataset.tool));
+        button.addEventListener("click", () => {
+            toolManager.setActiveTool(button.dataset.tool);
+            moreShapesPanel.hidden = true;
+        });
+    });
+
+    moreShapesBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        moreShapesPanel.hidden = !moreShapesPanel.hidden;
+    });
+    document.addEventListener("click", (event) => {
+        if (!moreShapesPanel.hidden && !event.target.closest("[data-tool-flyout]")) {
+            moreShapesPanel.hidden = true;
+        }
     });
 
     toolManager.eventBus.on("tool:change", ({ name }) => setActiveButton(name));

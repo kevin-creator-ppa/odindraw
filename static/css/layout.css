@@ -402,6 +402,30 @@
     color: var(--accent);
 }
 
+/* Flyout "Mais formas" — agrupa ferramentas menos usadas fora da coluna principal, que ficou grande demais depois de tantas formas novas. */
+.tool-flyout {
+    position: relative;
+}
+
+.tool-flyout__panel {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 4px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 8px;
+    z-index: 25;
+}
+
+.tool-flyout__panel[hidden] {
+    display: none;
+}
+
 /* Properties panel */
 .property {
     display: flex;
