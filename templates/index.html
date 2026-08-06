@@ -122,23 +122,7 @@
             </div>
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
-                <div class="tool-flyout" data-tool-flyout>
-                    <button class="tool" data-action="toggle-more-shapes" data-icon="more-shapes" title="Mais formas"></button>
-                    <div class="tool-flyout__panel" data-more-shapes-panel hidden>
-                        <button class="tool" data-tool="square" data-icon="square" title="Quadrado"></button>
-                        <button class="tool" data-tool="circle" data-icon="circle" title="Círculo"></button>
-                        <button class="tool" data-tool="triangle" data-icon="triangle" title="Triângulo"></button>
-                        <button class="tool" data-tool="hexagon" data-icon="hexagon" title="Hexágono"></button>
-                        <button class="tool" data-tool="cylinder" data-icon="cylinder" title="Cilindro (banco de dados)"></button>
-                        <button class="tool" data-tool="cloud" data-icon="cloud" title="Nuvem"></button>
-                        <button class="tool" data-tool="table" data-icon="table" title="Tabela"></button>
-                        <button class="tool" data-tool="container" data-icon="container" title="Container / raia"></button>
-                        <button class="tool" data-tool="orthogonal-line" data-icon="orthogonal-line" title="Linha ortogonal"></button>
-                        <button class="tool" data-tool="freehand" data-icon="freehand" title="Desenho livre (P)"></button>
-                        <button class="tool" data-tool="eraser" data-icon="eraser" title="Borracha (E)"></button>
-                        <button class="tool" data-tool="comment" data-icon="comment" title="Comentário / nota"></button>
-                    </div>
-                </div>
+                <button class="tool" data-action="toggle-more-shapes" data-icon="more-shapes" title="Mais formas"></button>
             </div>
             <span class="divider divider--horizontal"></span>
             <div class="tool-group">
@@ -147,6 +131,22 @@
                 <button class="tool" data-action="toggle-find" data-icon="search" title="Localizar e substituir (Ctrl+F)"></button>
             </div>
         </aside>
+
+        <!-- Flyout "Mais formas" — fora da barra lateral de propósito: overflow-y:auto nela corta (via overflow-x:auto implícito) qualquer coisa posicionada pra fora dos 64px, então o painel não pode morar lá dentro. -->
+        <div class="tool-flyout__panel" data-more-shapes-panel hidden>
+            <button class="tool" data-tool="square" data-icon="square" title="Quadrado"></button>
+            <button class="tool" data-tool="circle" data-icon="circle" title="Círculo"></button>
+            <button class="tool" data-tool="triangle" data-icon="triangle" title="Triângulo"></button>
+            <button class="tool" data-tool="hexagon" data-icon="hexagon" title="Hexágono"></button>
+            <button class="tool" data-tool="cylinder" data-icon="cylinder" title="Cilindro (banco de dados)"></button>
+            <button class="tool" data-tool="cloud" data-icon="cloud" title="Nuvem"></button>
+            <button class="tool" data-tool="table" data-icon="table" title="Tabela"></button>
+            <button class="tool" data-tool="container" data-icon="container" title="Container / raia"></button>
+            <button class="tool" data-tool="orthogonal-line" data-icon="orthogonal-line" title="Linha ortogonal"></button>
+            <button class="tool" data-tool="freehand" data-icon="freehand" title="Desenho livre (P)"></button>
+            <button class="tool" data-tool="eraser" data-icon="eraser" title="Borracha (E)"></button>
+            <button class="tool" data-tool="comment" data-icon="comment" title="Comentário / nota"></button>
+        </div>
 
         <!-- Painel flutuante da biblioteca de componentes -->
         <aside class="library-panel" data-library-panel hidden>

@@ -402,15 +402,10 @@
     color: var(--accent);
 }
 
-/* Flyout "Mais formas" — agrupa ferramentas menos usadas fora da coluna principal, que ficou grande demais depois de tantas formas novas. */
-.tool-flyout {
-    position: relative;
-}
-
+/* Flyout "Mais formas" — agrupa ferramentas menos usadas fora da coluna principal, que ficou grande demais depois de tantas formas novas. Fica FORA da barra lateral no HTML de propósito (ver comentário lá) — `top` é calculado em JS (app.js) pra acompanhar a posição do botão. */
 .tool-flyout__panel {
     position: absolute;
-    left: calc(100% + 8px);
-    top: 0;
+    left: 76px;
     display: grid;
     grid-template-columns: repeat(3, 40px);
     gap: 4px;

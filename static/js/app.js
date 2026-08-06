@@ -460,12 +460,17 @@ function initToolSelection(toolManager) {
 
     moreShapesBtn.addEventListener("click", (event) => {
         event.stopPropagation();
-        moreShapesPanel.hidden = !moreShapesPanel.hidden;
+        const opening = moreShapesPanel.hidden;
+        if (opening) {
+            // O painel mora fora da barra lateral (ver comentário no HTML) — alinha o topo com o botão que o abriu.
+            moreShapesPanel.style.top = `${moreShapesBtn.getBoundingClientRect().top}px`;
+        }
+        moreShapesPanel.hidden = !opening;
     });
     document.addEventListener("click", (event) => {
-        if (!moreShapesPanel.hidden && !event.target.closest("[data-tool-flyout]")) {
-            moreShapesPanel.hidden = true;
-        }
+        if (moreShapesPanel.hidden) return;
+        if (event.target === moreShapesBtn || moreShapesPanel.contains(event.target)) return;
+        moreShapesPanel.hidden = true;
     });
 
     toolManager.eventBus.on("tool:change", ({ name }) => setActiveButton(name));
