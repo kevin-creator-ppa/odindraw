@@ -30,11 +30,12 @@ import { setDefaultStyleFromElement } from "../elements/defaultStyleState.js";
  * de opacidade viraria um passo de undo.
  */
 export class PropertiesPanel {
-    constructor({ scene, selectionManager, renderer, eventBus, historyManager }) {
+    constructor({ scene, selectionManager, renderer, eventBus, historyManager, pageManager }) {
         this.scene = scene;
         this.selectionManager = selectionManager;
         this.renderer = renderer;
         this.historyManager = historyManager;
+        this.pageManager = pageManager;
         this._current = null;
         this._selection = [];
 
@@ -66,6 +67,7 @@ export class PropertiesPanel {
         this.fill2 = document.querySelector('[data-prop="fill2"]');
         this.gradientBtn = document.querySelector('[data-action="toggle-gradient"]');
         this.link = document.querySelector('[data-prop="link"]');
+        this.linkPageSelect = document.querySelector("[data-link-page-select]");
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
         this.setDefaultStyleBtn = document.querySelector('[data-action="set-default-style"]');
@@ -93,6 +95,7 @@ export class PropertiesPanel {
             this.fill2,
             this.gradientBtn,
             this.link,
+            this.linkPageSelect,
             this.lockBtn,
             this.visibleBtn,
             this.setDefaultStyleBtn,
@@ -117,7 +120,25 @@ export class PropertiesPanel {
         this._bindTabs();
         this._bind();
         eventBus.on("selection:change", (selected) => this._onSelectionChange(selected));
+        eventBus.on("pages:change", () => this._populateLinkPageOptions());
+        this._populateLinkPageOptions();
         this._setEnabled(false);
+    }
+
+    /** Opções do "vincular a uma página" no campo de link — refeitas sempre que páginas mudam (add/remove/rename). */
+    _populateLinkPageOptions() {
+        if (!this.linkPageSelect || !this.pageManager) return;
+        const currentValue = this.linkPageSelect.value;
+        this.linkPageSelect.innerHTML = '<option value="">Ou vincular a uma página…</option>';
+        this.pageManager.pages.forEach((page) => {
+            const option = document.createElement("option");
+            option.value = page.id;
+            option.textContent = page.name;
+            this.linkPageSelect.appendChild(option);
+        });
+        if (this.pageManager.pages.some((p) => p.id === currentValue)) {
+            this.linkPageSelect.value = currentValue;
+        }
     }
 
     _populateMarkerOptions(select) {
@@ -231,6 +252,15 @@ export class PropertiesPanel {
 
         this.link.addEventListener("change", () => {
             this._apply((el) => (el.link = this.link.value.trim() || null));
+            this._commit();
+            this._syncLinkPageSelect(this.link.value);
+        });
+
+        this.linkPageSelect?.addEventListener("change", () => {
+            const pageId = this.linkPageSelect.value;
+            const value = pageId ? `page:${pageId}` : "";
+            this.link.value = value;
+            this._apply((el) => (el.link = value || null));
             this._commit();
         });
 
@@ -508,6 +538,14 @@ export class PropertiesPanel {
         this.gradientBtn.classList.toggle("segmented__active", Boolean(element.style.fill2));
         this.fill2.value = element.style.fill2 || "#ffffff";
         this.link.value = element.link ?? "";
+        this._syncLinkPageSelect(this.link.value);
+    }
+
+    /** Se o link atual for `page:<id>`, seleciona essa página no dropdown; senão (URL externa ou vazio), volta ao "Ou vincular a uma página…". */
+    _syncLinkPageSelect(linkValue) {
+        if (!this.linkPageSelect) return;
+        const match = /^page:(.+)$/.exec(linkValue ?? "");
+        this.linkPageSelect.value = match ? match[1] : "";
     }
 
     _toggleTypeSpecificRows(element, selectionCount) {

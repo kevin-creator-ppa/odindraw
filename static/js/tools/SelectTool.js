@@ -84,7 +84,12 @@ export class SelectTool extends Tool {
         if (event?.ctrlKey || event?.metaKey) {
             const hit = context.scene.getObjectAtPoint(point);
             if (hit?.link) {
-                window.open(hit.link, "_blank", "noopener");
+                const internalPage = /^page:(.+)$/.exec(hit.link);
+                if (internalPage) {
+                    context.pageManager?.switchTo(internalPage[1]);
+                } else {
+                    window.open(hit.link, "_blank", "noopener");
+                }
                 return;
             }
         }

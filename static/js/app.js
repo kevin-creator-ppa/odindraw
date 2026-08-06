@@ -370,6 +370,7 @@ function initCanvasEngine() {
         renderer,
         selectionManager,
         historyManager,
+        pageManager,
         tools: [
             new SelectTool(),
             new PanTool(),
