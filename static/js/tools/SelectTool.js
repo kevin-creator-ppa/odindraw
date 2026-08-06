@@ -439,10 +439,10 @@ export class SelectTool extends Tool {
      */
     _duplicateInDirection(context, fromElement, anchor) {
         const clone = fromElement.clone();
-        if (anchor.fy === 0) clone.y = fromElement.y - fromElement.height - DUPLICATE_GAP;
-        else if (anchor.fx === 1) clone.x = fromElement.x + fromElement.width + DUPLICATE_GAP;
-        else if (anchor.fy === 1) clone.y = fromElement.y + fromElement.height + DUPLICATE_GAP;
-        else clone.x = fromElement.x - fromElement.width - DUPLICATE_GAP;
+        const rawX = anchor.fx === 0.5 ? 0 : anchor.fx === 1 ? 1 : -1;
+        const rawY = anchor.fy === 0.5 ? 0 : anchor.fy === 1 ? 1 : -1;
+        clone.x = fromElement.x + rawX * (fromElement.width + DUPLICATE_GAP);
+        clone.y = fromElement.y + rawY * (fromElement.height + DUPLICATE_GAP);
         clone.containerId = fromElement.containerId;
         context.scene.addObject(clone);
 
@@ -707,24 +707,29 @@ export class SelectTool extends Tool {
     }
 
     /**
-     * Pontos médios das 4 bordas do bbox (com offset pra fora) — arrastar
-     * cria um Connector. Cada um carrega seu `anchor` (fração do bbox,
-     * 0-1) — quando um Connector nasce ou é reconectado bem em cima de um
-     * desses pontos (de origem ou de destino), ele gruda ali fixo, em vez
-     * de deslizar dinamicamente pela borda mais próxima do outro extremo
-     * (ver Connector.resolveEndpoints).
+     * 8 pontos ao redor do bbox — 4 bordas + 4 cantos, com offset pra
+     * fora — arrastar cria um Connector. Cada um carrega seu `anchor`
+     * (fração do bbox, 0-1) — quando um Connector nasce ou é reconectado
+     * bem em cima de um desses pontos (de origem ou de destino), ele
+     * gruda ali fixo, em vez de deslizar dinamicamente pela borda mais
+     * próxima do outro extremo (ver Connector.resolveEndpoints).
      */
     _getBoxHandlePositions(context, element) {
         const b = element.getBounds();
         const halfW = b.width / 2;
         const halfH = b.height / 2;
         const offset = HANDLE_OFFSET / context.camera.zoom;
-        return [
-            { ...this._localToScreen(context, element, 0, -halfH - offset), anchor: { fx: 0.5, fy: 0 } },
-            { ...this._localToScreen(context, element, halfW + offset, 0), anchor: { fx: 1, fy: 0.5 } },
-            { ...this._localToScreen(context, element, 0, halfH + offset), anchor: { fx: 0.5, fy: 1 } },
-            { ...this._localToScreen(context, element, -halfW - offset, 0), anchor: { fx: 0, fy: 0.5 } },
+        const points = [
+            { lx: 0, ly: -halfH - offset, anchor: { fx: 0.5, fy: 0 } }, // N
+            { lx: halfW + offset, ly: -halfH - offset, anchor: { fx: 1, fy: 0 } }, // NE
+            { lx: halfW + offset, ly: 0, anchor: { fx: 1, fy: 0.5 } }, // E
+            { lx: halfW + offset, ly: halfH + offset, anchor: { fx: 1, fy: 1 } }, // SE
+            { lx: 0, ly: halfH + offset, anchor: { fx: 0.5, fy: 1 } }, // S
+            { lx: -halfW - offset, ly: halfH + offset, anchor: { fx: 0, fy: 1 } }, // SW
+            { lx: -halfW - offset, ly: 0, anchor: { fx: 0, fy: 0.5 } }, // W
+            { lx: -halfW - offset, ly: -halfH - offset, anchor: { fx: 0, fy: 0 } }, // NW
         ];
+        return points.map((p) => ({ ...this._localToScreen(context, element, p.lx, p.ly), anchor: p.anchor }));
     }
 
     _hitTestBoxHandle(context, element, screenPoint) {
@@ -744,9 +749,13 @@ export class SelectTool extends Tool {
         const b = element.getBounds();
         const anchors = [
             { fx: 0.5, fy: 0 },
+            { fx: 1, fy: 0 },
             { fx: 1, fy: 0.5 },
+            { fx: 1, fy: 1 },
             { fx: 0.5, fy: 1 },
+            { fx: 0, fy: 1 },
             { fx: 0, fy: 0.5 },
+            { fx: 0, fy: 0 },
         ];
         return (
             anchors.find((anchor) => {
@@ -922,11 +931,12 @@ export class SelectTool extends Tool {
         ctx.restore();
     }
 
+    /** Vetor unitário (inclusive diagonal) a partir da fração fx/fy do anchor — 0.5 é "sem componente nesse eixo", 0/1 é "componente pra lá/pra cá". */
     _arrowDirectionVector(anchor) {
-        if (anchor.fy === 0) return { dx: 0, dy: -1 };
-        if (anchor.fx === 1) return { dx: 1, dy: 0 };
-        if (anchor.fy === 1) return { dx: 0, dy: 1 };
-        return { dx: -1, dy: 0 };
+        const rawX = anchor.fx === 0.5 ? 0 : anchor.fx === 1 ? 1 : -1;
+        const rawY = anchor.fy === 0.5 ? 0 : anchor.fy === 1 ? 1 : -1;
+        const len = Math.hypot(rawX, rawY) || 1;
+        return { dx: rawX / len, dy: rawY / len };
     }
 
     /** Triângulo apontando pra fora, centrado em (x,y), na direção (dx,dy) — mesmo visual do draw.io. */
