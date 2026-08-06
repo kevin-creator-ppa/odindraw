@@ -4,6 +4,15 @@
     box-sizing: border-box;
 }
 
+/* Esconde a barra de rolagem em qualquer painel que role (biblioteca, camadas, propriedades, menus) — a rolagem continua funcionando por scroll/trackpad, só a barra visual some. */
+* {
+    scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+    display: none; /* Chrome/Edge/Safari */
+}
+
 html, body {
     height: 100%;
     margin: 0;
