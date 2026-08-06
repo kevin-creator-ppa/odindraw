@@ -434,15 +434,30 @@ function initGridToggle(renderer) {
 }
 
 const SKETCH_STORAGE_KEY = "odindraw:sketch";
+const SKETCH_LEVEL_STORAGE_KEY = "odindraw:sketch-level";
 
-/** Estilo "desenho à mão" (ver elements/sketch.js): preferência global, não por diagrama — persiste em localStorage, igual o tema. */
+/** Estilo "desenho à mão" (ver elements/sketch.js): preferência global, não por diagrama — persiste em localStorage, igual o tema. O seletor de nível (arquiteto/artista/cartunista) só aparece com o sketch ligado. */
 function initSketchToggle(renderer) {
     const button = document.querySelector('[data-action="toggle-sketch"]');
+    const levelGroup = document.querySelector("[data-sketch-level]");
+
     const apply = (enabled) => {
         sketchState.enabled = enabled;
         button.setAttribute("data-active", String(enabled));
+        levelGroup.hidden = !enabled;
         renderer.markDirty();
     };
+
+    sketchState.level = localStorage.getItem(SKETCH_LEVEL_STORAGE_KEY) || "artist";
+    levelGroup.querySelectorAll("button").forEach((btn) => {
+        btn.classList.toggle("segmented__active", btn.dataset.value === sketchState.level);
+        btn.addEventListener("click", () => {
+            sketchState.level = btn.dataset.value;
+            localStorage.setItem(SKETCH_LEVEL_STORAGE_KEY, sketchState.level);
+            levelGroup.querySelectorAll("button").forEach((b) => b.classList.toggle("segmented__active", b === btn));
+            renderer.markDirty();
+        });
+    });
 
     apply(localStorage.getItem(SKETCH_STORAGE_KEY) === "true");
     button.addEventListener("click", () => {

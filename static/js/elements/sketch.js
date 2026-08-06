@@ -1,9 +1,12 @@
 /**
  * Estado global do estilo "desenho à mão" (sketch, estilo rough.js/
- * Excalidraw): um toggle único (menu principal) que troca o traço
- * preciso de sempre por um levemente "tremido" — duas passadas com
- * pequenas curvas/deslocamentos aleatórios em vez de uma linha reta
- * perfeita.
+ * Excalidraw): um toggle (menu principal) que troca o traço preciso de
+ * sempre por um "tremido" — várias passadas com pequenas curvas/
+ * deslocamentos aleatórios em vez de uma linha reta perfeita — e um
+ * nível de capricho (sloppiness), igual o Excalidraw:
+ *  - architect: quase reto, só uma leve imperfeição.
+ *  - artist: o padrão, tremido moderado (era o único nível antes).
+ *  - cartoonist: bem rabiscado, várias passadas bem deslocadas.
  *
  * Cobre as formas mais comuns (retângulo, elipse, losango, triângulo,
  * linha/seta reta) — hexágono, cilindro, nuvem, tabela, ícones da
@@ -15,7 +18,17 @@
  * É puramente visual — containsPoint()/geometria de seleção nunca leem
  * `sketchState`, só o render().
  */
-export const sketchState = { enabled: false };
+export const sketchState = { enabled: false, level: "artist" };
+
+const LEVELS = {
+    architect: { jitter: 0.6, passes: 1 },
+    artist: { jitter: 1.4, passes: 2 },
+    cartoonist: { jitter: 2.6, passes: 3 },
+};
+
+function currentLevel() {
+    return LEVELS[sketchState.level] ?? LEVELS.artist;
+}
 
 /** Hash simples e determinístico do id do elemento — a mesma forma sempre tem a mesma "mão trêmula" entre re-renders (senão pareceria animado). */
 export function seedFromId(id) {
@@ -35,17 +48,16 @@ function seededRandom(seed) {
     };
 }
 
-const JITTER = 1.4;
-
-/** Traço "à mão" entre dois pontos: duas passadas levemente deslocadas/curvas em vez de uma reta perfeita. */
+/** Traço "à mão" entre dois pontos: N passadas (conforme o nível) levemente deslocadas/curvas em vez de uma reta perfeita. */
 export function sketchyLine(ctx, x1, y1, x2, y2, seed = 1) {
+    const { jitter, passes } = currentLevel();
     const rand = seededRandom(seed);
-    for (let pass = 0; pass < 2; pass++) {
-        const midX = (x1 + x2) / 2 + (rand() - 0.5) * JITTER * 3;
-        const midY = (y1 + y2) / 2 + (rand() - 0.5) * JITTER * 3;
+    for (let pass = 0; pass < passes; pass++) {
+        const midX = (x1 + x2) / 2 + (rand() - 0.5) * jitter * 3;
+        const midY = (y1 + y2) / 2 + (rand() - 0.5) * jitter * 3;
         ctx.beginPath();
-        ctx.moveTo(x1 + (rand() - 0.5) * JITTER, y1 + (rand() - 0.5) * JITTER);
-        ctx.quadraticCurveTo(midX, midY, x2 + (rand() - 0.5) * JITTER, y2 + (rand() - 0.5) * JITTER);
+        ctx.moveTo(x1 + (rand() - 0.5) * jitter, y1 + (rand() - 0.5) * jitter);
+        ctx.quadraticCurveTo(midX, midY, x2 + (rand() - 0.5) * jitter, y2 + (rand() - 0.5) * jitter);
         ctx.stroke();
     }
 }
@@ -61,6 +73,7 @@ export function sketchyRect(ctx, x, y, w, h, seed = 1) {
 
 /** Elipse "à mão": aproxima por segmentos curtos com leve variação de raio ponto a ponto. */
 export function sketchyEllipse(ctx, x, y, w, h, seed = 1) {
+    const { jitter } = currentLevel();
     const rand = seededRandom(seed);
     const cx = x + w / 2;
     const cy = y + h / 2;
@@ -71,9 +84,9 @@ export function sketchyEllipse(ctx, x, y, w, h, seed = 1) {
     ctx.beginPath();
     for (let i = 0; i <= steps; i++) {
         const t = (i / steps) * Math.PI * 2;
-        const jitter = (rand() - 0.5) * JITTER * 1.5;
-        const px = cx + Math.cos(t) * (rx + jitter);
-        const py = cy + Math.sin(t) * (ry + jitter);
+        const j = (rand() - 0.5) * jitter * 1.5;
+        const px = cx + Math.cos(t) * (rx + j);
+        const py = cy + Math.sin(t) * (ry + j);
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
     }
