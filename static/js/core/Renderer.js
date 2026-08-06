@@ -35,6 +35,9 @@ export class Renderer {
         this.height = 0;
         this.dpr = window.devicePixelRatio || 1;
         this._dirty = true;
+        this._hasAnimatedStroke = false;
+        this._gridDotColor = "#c9c9d1";
+        this._borderColor = "#c9c9d1";
 
         this._resizeObserver = new ResizeObserver(() => this.resize());
         this._resizeObserver.observe(container);
@@ -81,17 +84,34 @@ export class Renderer {
         ctx.clearRect(0, 0, this.width, this.height);
     }
 
+    /**
+     * `hasAnimatedStroke` e as cores lidas do CSS só são recalculadas
+     * quando algo mudou de verdade (dirty) — não a cada frame. Sem isso,
+     * um único conector com traço "animado" forçava um scan de todos os
+     * objetos + duas chamadas de getComputedStyle a 60fps pra sempre,
+     * mesmo com o resto do diagrama parado.
+     */
     _tick() {
-        const hasAnimatedStroke = this.scene.objects.some((el) => el.style?.strokeStyle === "animated");
-        if (hasAnimatedStroke) {
+        if (this._dirty) {
+            this._hasAnimatedStroke = this.scene.objects.some((el) => el.style?.strokeStyle === "animated");
+            this._refreshCachedColors();
+        }
+
+        if (this._hasAnimatedStroke) {
             animationState.phase = (animationState.phase + 0.4) % 13;
         }
 
-        if (this._dirty || hasAnimatedStroke) {
+        if (this._dirty || this._hasAnimatedStroke) {
             this._renderStatic();
             this._dirty = false;
         }
         requestAnimationFrame(this._tick);
+    }
+
+    _refreshCachedColors() {
+        const style = getComputedStyle(this.container);
+        this._gridDotColor = style.getPropertyValue("--grid-dot").trim() || "#c9c9d1";
+        this._borderColor = style.getPropertyValue("--border-color").trim() || "#c9c9d1";
     }
 
     _renderStatic() {
@@ -128,7 +148,7 @@ export class Renderer {
         const bottomRight = this.camera.worldToScreen(this.pageSize.width, this.pageSize.height);
 
         ctx.save();
-        ctx.strokeStyle = getComputedStyle(this.container).getPropertyValue("--border-color").trim() || "#c9c9d1";
+        ctx.strokeStyle = this._borderColor;
         ctx.lineWidth = 1;
         ctx.setLineDash([6, 4]);
         ctx.strokeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
@@ -147,7 +167,7 @@ export class Renderer {
         const startY = mod(offsetY, spacing);
         const dotRadius = Math.min(1.4, 0.75 + zoom * 0.25);
 
-        ctx.fillStyle = getComputedStyle(this.container).getPropertyValue("--grid-dot").trim() || "#c9c9d1";
+        ctx.fillStyle = this._gridDotColor;
         for (let x = startX; x < this.width + spacing; x += spacing) {
             for (let y = startY; y < this.height + spacing; y += spacing) {
                 ctx.beginPath();
