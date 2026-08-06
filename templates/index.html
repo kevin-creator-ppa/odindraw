@@ -87,6 +87,25 @@
                                 <button data-action="page-landscape">Paisagem</button>
                             </div>
                         </div>
+                        <span class="menu-divider"></span>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Estilo da grade</span>
+                            <div class="segmented segmented--compact" data-grid-style>
+                                <button data-value="dots" class="segmented__active" title="Pontos">Pontos</button>
+                                <button data-value="lines" title="Linhas">Linhas</button>
+                            </div>
+                        </div>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Tamanho da grade</span>
+                            <input type="number" min="4" max="200" step="1" value="24" data-grid-size>
+                        </div>
+                        <div class="menu-item menu-item--static">
+                            <span class="menu-item__label">Cor da grade</span>
+                            <div class="segmented segmented--compact">
+                                <input type="color" class="swatch swatch--custom" value="#cfcfd6" data-grid-color title="Cor personalizada">
+                                <button data-action="reset-grid-color" title="Usar cor do tema">Auto</button>
+                            </div>
+                        </div>
                         <button class="menu-item" data-action="print" title="Imprimir">
                             <span class="menu-item__icon" data-icon="file-text"></span>
                             <span class="menu-item__label">Imprimir</span>

@@ -474,6 +474,58 @@ function initGridToggle(renderer) {
     });
 }
 
+const GRID_SETTINGS_STORAGE_KEY = "odindraw:grid-settings";
+
+/** Personalização da grade (tamanho/cor/pontos-ou-linhas, estilo draw.io) — preferência global persistida em localStorage. */
+function initGridSettings(renderer) {
+    const styleGroup = document.querySelector("[data-grid-style]");
+    const sizeInput = document.querySelector("[data-grid-size]");
+    const colorInput = document.querySelector("[data-grid-color]");
+    const resetColorBtn = document.querySelector('[data-action="reset-grid-color"]');
+
+    const stored = (() => {
+        try {
+            return JSON.parse(localStorage.getItem(GRID_SETTINGS_STORAGE_KEY)) || {};
+        } catch {
+            return {};
+        }
+    })();
+
+    const save = (settings) => localStorage.setItem(GRID_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    let current = { style: stored.style ?? "dots", size: stored.size ?? BASE_GRID_SPACING, color: stored.color ?? null };
+
+    const apply = () => {
+        renderer.setGridStyle(current.style);
+        renderer.setGridSpacing(current.size);
+        renderer.setGridColor(current.color);
+        styleGroup.querySelectorAll("button").forEach((btn) => btn.classList.toggle("segmented__active", btn.dataset.value === current.style));
+        sizeInput.value = current.size;
+        colorInput.value = current.color || "#cfcfd6";
+        save(current);
+    };
+
+    styleGroup.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            current = { ...current, style: btn.dataset.value };
+            apply();
+        });
+    });
+    sizeInput.addEventListener("change", () => {
+        current = { ...current, size: clamp(Number(sizeInput.value) || BASE_GRID_SPACING, 4, 200) };
+        apply();
+    });
+    colorInput.addEventListener("input", () => {
+        current = { ...current, color: colorInput.value };
+        apply();
+    });
+    resetColorBtn.addEventListener("click", () => {
+        current = { ...current, color: null };
+        apply();
+    });
+
+    apply();
+}
+
 const RULERS_STORAGE_KEY = "odindraw:rulers";
 
 /** Réguas (estilo draw.io/Illustrator) — preferência global, persiste em localStorage igual o tema. */
@@ -963,6 +1015,7 @@ function init() {
     initPropertiesPanelToggle(engine);
     initZoomControls(engine);
     initGridToggle(engine.renderer);
+    initGridSettings(engine.renderer);
     initRulerToggle(engine.renderer);
     initSketchToggle(engine.renderer);
     initToolSelection(engine.toolManager);

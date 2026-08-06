@@ -237,6 +237,26 @@
     font-size: 12px;
 }
 
+.menu-item--static input[type="number"] {
+    width: 56px;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.menu-item--static .segmented--compact input[type="color"] {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 6px 0 0 6px;
+    background: none;
+    cursor: pointer;
+}
+
 .menu-divider {
     display: block;
     height: 1px;

@@ -39,6 +39,9 @@ export class Renderer {
         this.interactiveCtx = interactiveCanvas.getContext("2d");
 
         this.gridEnabled = true;
+        this.gridSpacing = BASE_GRID_SPACING;
+        this.gridStyle = "dots"; // "dots" | "lines"
+        this.gridColorOverride = null; // null = segue a cor do tema (_gridDotColor)
         this.rulersEnabled = false;
         this.pageSize = { ...DEFAULT_PAGE_SIZE };
         this.width = 0;
@@ -65,6 +68,22 @@ export class Renderer {
 
     setGridEnabled(enabled) {
         this.gridEnabled = enabled;
+        this.markDirty();
+    }
+
+    setGridSpacing(spacing) {
+        this.gridSpacing = Math.max(2, spacing);
+        this.markDirty();
+    }
+
+    setGridStyle(style) {
+        this.gridStyle = style;
+        this.markDirty();
+    }
+
+    /** `color = null` volta a seguir a cor do tema (ver _refreshCachedColors). */
+    setGridColor(color) {
+        this.gridColorOverride = color;
         this.markDirty();
     }
 
@@ -265,16 +284,33 @@ export class Renderer {
     _drawGrid(ctx) {
         const { zoom, offsetX, offsetY } = this.camera;
 
-        let worldSpacing = BASE_GRID_SPACING;
+        let worldSpacing = this.gridSpacing;
         while (worldSpacing * zoom < MIN_SCREEN_SPACING) worldSpacing *= 2;
         while (worldSpacing * zoom > MAX_SCREEN_SPACING) worldSpacing /= 2;
         const spacing = worldSpacing * zoom;
 
         const startX = mod(offsetX, spacing);
         const startY = mod(offsetY, spacing);
-        const dotRadius = Math.min(1.4, 0.75 + zoom * 0.25);
+        const color = this.gridColorOverride || this._gridDotColor;
 
-        ctx.fillStyle = this._gridDotColor;
+        if (this.gridStyle === "lines") {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = startX; x < this.width + spacing; x += spacing) {
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, this.height);
+            }
+            for (let y = startY; y < this.height + spacing; y += spacing) {
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(this.width, y + 0.5);
+            }
+            ctx.stroke();
+            return;
+        }
+
+        const dotRadius = Math.min(1.4, 0.75 + zoom * 0.25);
+        ctx.fillStyle = color;
         for (let x = startX; x < this.width + spacing; x += spacing) {
             for (let y = startY; y < this.height + spacing; y += spacing) {
                 ctx.beginPath();
