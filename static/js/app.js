@@ -28,7 +28,7 @@ import { ContextMenu } from "./ui/ContextMenu.js";
 import { ShortcutsModal } from "./ui/ShortcutsModal.js";
 import { TextEditor } from "./ui/TextEditor.js";
 import { SaveLoad } from "./io/SaveLoad.js";
-import { exportPng } from "./io/ExportPng.js";
+import { exportPng, copyPngToClipboard } from "./io/ExportPng.js";
 import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
 import { exportDrawio } from "./io/ExportDrawio.js";
@@ -145,6 +145,23 @@ function initPropertiesPanelToggle({ eventBus }) {
 }
 
 /** Liga os 3 itens do dropdown Exportar; avisa se não há nada desenhado ainda. */
+/** Aviso rápido no canto da tela (ex.: "Copiado como imagem") — some sozinho, não precisa de interação. */
+function showToast(message) {
+    let toast = document.querySelector("[data-toast]");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.setAttribute("data-toast", "");
+        toast.className = "toast";
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.remove("toast--visible");
+    void toast.offsetWidth;
+    toast.classList.add("toast--visible");
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove("toast--visible"), 1800);
+}
+
 function initExportActions({ scene, pageManager }) {
     const guardEmptyScene = () => {
         if (scene.objects.length === 0) {
@@ -157,6 +174,17 @@ function initExportActions({ scene, pageManager }) {
     document.querySelector('[data-action="export-png"]').addEventListener("click", () => {
         if (guardEmptyScene()) return;
         exportPng(scene);
+    });
+
+    document.querySelector('[data-action="copy-as-image"]').addEventListener("click", async () => {
+        if (guardEmptyScene()) return;
+        try {
+            await copyPngToClipboard(scene);
+            showToast("Diagrama copiado como imagem");
+        } catch (error) {
+            window.alert("Não foi possível copiar a imagem. Seu navegador pode não suportar essa ação.");
+            console.error(error);
+        }
     });
 
     document.querySelector('[data-action="export-svg"]').addEventListener("click", () => {

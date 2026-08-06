@@ -1291,3 +1291,27 @@
     border-radius: 8px;
     box-shadow: var(--shadow);
 }
+
+/* Aviso rápido (ex.: "Copiado como imagem") — canto inferior, some sozinho. */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 12px);
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 10px 16px;
+    font-size: 13px;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.toast--visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}

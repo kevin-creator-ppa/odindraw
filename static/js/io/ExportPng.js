@@ -13,7 +13,7 @@ function exportCamera(frame) {
     };
 }
 
-export function exportPng(scene, filename = "diagrama.png") {
+function renderSceneToCanvas(scene) {
     const frame = computeExportFrame(scene);
     const scale = window.devicePixelRatio || 1;
 
@@ -30,5 +30,24 @@ export function exportPng(scene, filename = "diagrama.png") {
     const sorted = [...scene.objects].filter((el) => scene.isElementVisible(el)).sort((a, b) => scene.stackCompare(a, b));
     sorted.forEach((element) => element.render(ctx, camera, scene));
 
+    return canvas;
+}
+
+export function exportPng(scene, filename = "diagrama.png") {
+    const canvas = renderSceneToCanvas(scene);
     canvas.toBlob((blob) => downloadBlob(blob, filename), "image/png");
+}
+
+/** Copia o diagrama pra área de transferência como PNG (Ctrl+Alt+C, como o draw.io) — cola direto no Slack/Word/etc. */
+export function copyPngToClipboard(scene) {
+    const canvas = renderSceneToCanvas(scene);
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                reject(new Error("Falha ao gerar a imagem"));
+                return;
+            }
+            navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]).then(resolve, reject);
+        }, "image/png");
+    });
 }
