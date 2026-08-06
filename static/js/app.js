@@ -35,6 +35,7 @@ import { exportDrawio } from "./io/ExportDrawio.js";
 import { computeSceneBounds, computeElementsBounds, buildSvgString } from "./io/svgBuilder.js";
 import { extractStyle, applyStyle } from "./managers/styleClipboard.js";
 import { copySelection, pasteClipboard } from "./managers/clipboard.js";
+import { applyDefaultStyle } from "./elements/defaultStyleState.js";
 import { clamp } from "./utils/geometry.js";
 import { applyIcons } from "./ui/icons.js";
 import { SelectTool } from "./tools/SelectTool.js";
@@ -565,6 +566,7 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
     };
 
     const addAndSelect = (element) => {
+        applyDefaultStyle(element);
         scene.addObject(element);
         renderer.markDirty();
         focusSelectTool(element);
@@ -632,6 +634,7 @@ function initElementCreation({ scene, eventBus, renderer, selectionManager, tool
 
     eventBus.on("tool:text-placed", ({ point }) => {
         const element = new Text({ x: point.x, y: point.y });
+        applyDefaultStyle(element);
         scene.addObject(element);
         renderer.markDirty();
         focusSelectTool(element);

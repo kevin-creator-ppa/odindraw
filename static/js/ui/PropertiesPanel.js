@@ -12,6 +12,7 @@ import {
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 import { resolveInkColor } from "./theme.js";
 import { MARKER_TYPES } from "../elements/arrowhead.js";
+import { setDefaultStyleFromElement } from "../elements/defaultStyleState.js";
 
 /**
  * Liga os controles da sidebar direita à seleção atual: lê o estado do
@@ -67,6 +68,7 @@ export class PropertiesPanel {
         this.link = document.querySelector('[data-prop="link"]');
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
+        this.setDefaultStyleBtn = document.querySelector('[data-action="set-default-style"]');
 
         this.inputs = [
             this.fill,
@@ -93,6 +95,7 @@ export class PropertiesPanel {
             this.link,
             this.lockBtn,
             this.visibleBtn,
+            this.setDefaultStyleBtn,
             ...this.alignButtons,
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
@@ -308,6 +311,11 @@ export class PropertiesPanel {
             this._syncToggleButtons();
             this.renderer.markDirty();
             this._commit();
+        });
+
+        this.setDefaultStyleBtn.addEventListener("click", () => {
+            if (!this._current) return;
+            setDefaultStyleFromElement(this._current);
         });
     }
 

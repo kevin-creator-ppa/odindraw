@@ -80,6 +80,7 @@ export const ICONS = {
     "layer-forward": svg('<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M12 15V9M9 12l3-3 3 3"/>'),
     "layer-front": svg('<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M12 17v-6M9 14l3-3 3 3"/><path d="M8 7h8"/>'),
     duplicate: svg('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>'),
+    bookmark: svg('<path d="M6 3h12v18l-6-4-6 4z"/>', { filled: true }),
     trash: svg(
         '<path d="M4 7h16"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/><path d="M6 7l1 13a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5L18 7"/><path d="M10 11v6M14 11v6"/>'
     ),
