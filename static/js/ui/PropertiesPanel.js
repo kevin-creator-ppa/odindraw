@@ -41,6 +41,7 @@ export class PropertiesPanel {
         this.stroke = document.querySelector('[data-prop="stroke"]');
         this.strokeWidthGroup = document.querySelector('[data-prop="stroke-width"]');
         this.strokeStyleGroup = document.querySelector('[data-prop="stroke-style"]');
+        this.fillPatternGroup = document.querySelector('[data-prop="fill-pattern"]');
         this.opacity = document.querySelector('[data-prop="opacity"]');
         this.rotation = document.querySelector('[data-prop="rotation"]');
         this.width = document.querySelector('[data-prop="width"]');
@@ -95,6 +96,7 @@ export class PropertiesPanel {
             ...this.alignButtons,
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
+            ...this.fillPatternGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
                 '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"], [data-action="align-left"], [data-action="align-center-h"], [data-action="align-right"], [data-action="align-top"], [data-action="align-middle-v"], [data-action="align-bottom"], [data-action="distribute-h"], [data-action="distribute-v"]'
             ),
@@ -141,6 +143,7 @@ export class PropertiesPanel {
         this._bindSwatches("fill", this.fill, (el, value) => (el.style.fill = value));
         this._bindSegmented(this.strokeWidthGroup, (el, value) => (el.style.strokeWidth = Number(value)));
         this._bindSegmented(this.strokeStyleGroup, (el, value) => (el.style.strokeStyle = value));
+        this._bindSegmented(this.fillPatternGroup, (el, value) => (el.style.fillPattern = value));
 
         this.stroke.addEventListener("input", () => this._apply((el) => (el.style.stroke = this.stroke.value)));
         this.stroke.addEventListener("change", () => this._commit());
@@ -473,6 +476,7 @@ export class PropertiesPanel {
         this._syncSwatchActive(document.querySelector('[data-swatches="fill"]'), element.style.fill);
         this._syncSegmentedActive(this.strokeWidthGroup, String(element.style.strokeWidth));
         this._syncSegmentedActive(this.strokeStyleGroup, element.style.strokeStyle);
+        this._syncSegmentedActive(this.fillPatternGroup, element.style.fillPattern ?? "solid");
         this._syncToggleButtons();
 
         const textHost = this._textHost(element);

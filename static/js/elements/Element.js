@@ -1,5 +1,6 @@
 import { animationState } from "./animationState.js";
 import { AUTO_INK, resolveInkColor } from "../ui/theme.js";
+import { resolveFillStyle } from "./fillPatterns.js";
 
 let idCounter = 0;
 
@@ -18,6 +19,7 @@ function defaultStyle() {
         opacity: 1,
         shadow: false,
         fill2: null,
+        fillPattern: "solid",
     };
 }
 
@@ -95,6 +97,8 @@ export class Element {
             gradient.addColorStop(0, this.resolvedFill());
             gradient.addColorStop(1, resolveInkColor(this.style.fill2));
             ctx.fillStyle = gradient;
+        } else if (this.style.fillPattern && this.style.fillPattern !== "solid") {
+            ctx.fillStyle = resolveFillStyle(ctx, this.style, this.resolvedFill());
         } else {
             ctx.fillStyle = this.resolvedFill();
         }
