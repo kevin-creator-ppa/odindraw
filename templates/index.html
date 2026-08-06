@@ -104,6 +104,7 @@
             <div class="topbar__group topbar__group--right">
                 <button class="btn btn--icon" data-action="show-shortcuts" data-icon="help" title="Atalhos de teclado (?)"></button>
                 <button class="btn btn--icon" data-action="toggle-grid" data-icon="grid" data-active="true" title="Mostrar/ocultar grade"></button>
+                <button class="btn btn--icon" data-action="toggle-rulers" data-icon="ruler" data-active="false" title="Mostrar/ocultar réguas"></button>
                 <button class="btn btn--icon" data-action="toggle-sketch" data-icon="freehand" data-active="false" title="Estilo desenho à mão (sketch)"></button>
                 <div class="segmented segmented--compact" data-sketch-level hidden>
                     <button data-value="architect" title="Arquiteto: mais preciso">Arq</button>
@@ -199,6 +200,9 @@
         <main class="canvas-area" data-canvas-area>
             <canvas id="static-canvas" class="canvas-layer"></canvas>
             <canvas id="interactive-canvas" class="canvas-layer"></canvas>
+            <canvas class="ruler ruler--top" data-ruler-top hidden></canvas>
+            <canvas class="ruler ruler--left" data-ruler-left hidden></canvas>
+            <div class="ruler-corner" data-ruler-corner hidden></div>
 
             <div class="bottom-toolbar" data-bottom-toolbar>
                 <button class="btn btn--icon" data-action="undo" data-icon="undo" title="Desfazer (Ctrl+Z)"></button>

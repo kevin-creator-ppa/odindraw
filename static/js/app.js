@@ -341,11 +341,23 @@ function initCanvasEngine() {
     const canvasArea = document.querySelector("[data-canvas-area]");
     const staticCanvas = document.getElementById("static-canvas");
     const interactiveCanvas = document.getElementById("interactive-canvas");
+    const rulerTopCanvas = document.querySelector("[data-ruler-top]");
+    const rulerLeftCanvas = document.querySelector("[data-ruler-left]");
+    const rulerCorner = document.querySelector("[data-ruler-corner]");
 
     const eventBus = new EventBus();
     const scene = new Scene();
     const camera = new Camera();
-    const renderer = new Renderer({ container: canvasArea, staticCanvas, interactiveCanvas, camera, scene });
+    const renderer = new Renderer({
+        container: canvasArea,
+        staticCanvas,
+        interactiveCanvas,
+        camera,
+        scene,
+        rulerTopCanvas,
+        rulerLeftCanvas,
+        rulerCorner,
+    });
     const selectionManager = new SelectionManager({ scene, eventBus });
     const pageManager = new PageManager({ scene, camera, renderer, eventBus });
     const historyManager = new HistoryManager({ pageManager, renderer, selectionManager, eventBus });
@@ -460,6 +472,20 @@ function initGridToggle(renderer) {
         button.setAttribute("data-active", String(enabled));
         renderer.setGridEnabled(enabled);
     });
+}
+
+const RULERS_STORAGE_KEY = "odindraw:rulers";
+
+/** Réguas (estilo draw.io/Illustrator) — preferência global, persiste em localStorage igual o tema. */
+function initRulerToggle(renderer) {
+    const button = document.querySelector('[data-action="toggle-rulers"]');
+    const apply = (enabled) => {
+        button.setAttribute("data-active", String(enabled));
+        renderer.setRulersEnabled(enabled);
+        localStorage.setItem(RULERS_STORAGE_KEY, String(enabled));
+    };
+    button.addEventListener("click", () => apply(button.getAttribute("data-active") !== "true"));
+    apply(localStorage.getItem(RULERS_STORAGE_KEY) === "true");
 }
 
 const SKETCH_STORAGE_KEY = "odindraw:sketch";
@@ -937,6 +963,7 @@ function init() {
     initPropertiesPanelToggle(engine);
     initZoomControls(engine);
     initGridToggle(engine.renderer);
+    initRulerToggle(engine.renderer);
     initSketchToggle(engine.renderer);
     initToolSelection(engine.toolManager);
     initElementCreation(engine);

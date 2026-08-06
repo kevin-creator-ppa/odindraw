@@ -58,6 +58,9 @@ export const ICONS = {
     "zoom-out": svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M8 10.5h5"/><path d="M21 21l-4.35-4.35"/>'),
     "zoom-fit": svg('<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>'),
     grid: svg('<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>'),
+    ruler: svg(
+        '<rect x="2.5" y="9" width="19" height="6" rx="1"/><path d="M6 9v2.5M9.5 9v1.5M13 9v2.5M16.5 9v1.5M20 9v2.5"/>'
+    ),
     sun: svg(
         '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/>'
     ),

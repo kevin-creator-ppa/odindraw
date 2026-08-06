@@ -1052,6 +1052,45 @@
     pointer-events: none;
 }
 
+/* Réguas (estilo draw.io/Illustrator) — sobrepostas nas bordas superior/esquerda da área de canvas, sem deslocar o viewport. Desenhadas pelo Renderer (ver core/Renderer.js). */
+.ruler {
+    position: absolute;
+    z-index: 15;
+    pointer-events: none;
+}
+
+.ruler--top {
+    top: 0;
+    left: 18px;
+    right: 0;
+}
+
+.ruler--left {
+    top: 18px;
+    left: 0;
+    bottom: 0;
+}
+
+.ruler[hidden] {
+    display: none;
+}
+
+.ruler-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 16;
+}
+
+.ruler-corner[hidden] {
+    display: none;
+}
+
 .text-editor-overlay {
     position: absolute;
     z-index: 30;
