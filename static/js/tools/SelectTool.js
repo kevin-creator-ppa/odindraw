@@ -5,11 +5,13 @@ import { computeAlignmentSnap, GUIDE_COLOR } from "./alignmentGuides.js";
 import { naturalBendPoint } from "../elements/routeGeometry.js";
 
 const OVERLAY_COLOR = "#6965db";
-const HANDLE_OFFSET = 14;
+const HANDLE_OFFSET = 20;
 const ROTATE_HANDLE_OFFSET = 30;
 const HANDLE_RADIUS = 5;
 const HANDLE_HIT_RADIUS = 9;
 const MIN_RESIZE_SIZE = 10;
+const ARROW_CLICK_THRESHOLD = 4; // px de tela: abaixo disso, soltar a seta conta como "clique" (duplica), não arraste (conecta)
+const DUPLICATE_GAP = 60; // espaço (mundo) entre a forma original e a cópia criada por clique na seta
 
 /**
  * Ferramenta padrão: clique seleciona o elemento sob o cursor (o de
@@ -46,7 +48,7 @@ export class SelectTool extends Tool {
         this._dragPrimary = null;
         this._dragOriginPointer = null;
         this._moved = false;
-        this._connectorDrag = null;
+        this._arrowDrag = null;
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
@@ -54,6 +56,7 @@ export class SelectTool extends Tool {
         this._marquee = null;
         this._activeGuides = null;
         this._unsubscribeCamera = null;
+        this._hoverTarget = null;
     }
 
     onActivate(context) {
@@ -66,13 +69,14 @@ export class SelectTool extends Tool {
         this._unsubscribeCamera = null;
         this._dragTargets = null;
         this._dragPrimary = null;
-        this._connectorDrag = null;
+        this._arrowDrag = null;
         this._pointDrag = null;
         this._resizeDrag = null;
         this._rotateDrag = null;
         this._waypointDrag = null;
         this._marquee = null;
         this._activeGuides = null;
+        this._hoverTarget = null;
         context.renderer.clearInteractive();
     }
 
@@ -133,9 +137,21 @@ export class SelectTool extends Tool {
 
                 const handle = this._hitTestBoxHandle(context, single, screenPoint);
                 if (handle) {
-                    this._connectorDrag = { fromElement: single, fromWorldPoint: handle.worldPoint, fromAnchor: handle.anchor };
+                    this._startArrowDrag(context, single, handle, screenPoint);
                     return;
                 }
+            }
+        }
+
+        // Hover numa forma diferente da selecionada (ou sem nada selecionado): as setas
+        // direcionais também funcionam aqui — é o que dá pra "sair desenhando" sem
+        // precisar clicar na forma primeiro (estilo draw.io).
+        if (this._hoverTarget && this._hoverTarget !== single && !context.scene.isElementLocked(this._hoverTarget)) {
+            const screenPoint = context.camera.worldToScreen(point.x, point.y);
+            const handle = this._hitTestBoxHandle(context, this._hoverTarget, screenPoint);
+            if (handle) {
+                this._startArrowDrag(context, this._hoverTarget, handle, screenPoint);
+                return;
             }
         }
 
@@ -194,9 +210,12 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (this._connectorDrag) {
+        if (this._arrowDrag) {
+            const screenPoint = context.camera.worldToScreen(point.x, point.y);
+            const dist = Math.hypot(screenPoint.x - this._arrowDrag.originScreen.x, screenPoint.y - this._arrowDrag.originScreen.y);
+            if (dist > ARROW_CLICK_THRESHOLD) this._arrowDrag.moved = true;
             this._redrawOverlay(context);
-            this._drawPreviewLine(context, this._connectorDrag.fromWorldPoint, point);
+            this._drawPreviewLine(context, this._arrowDrag.fromWorldPoint, point);
             return;
         }
 
@@ -228,7 +247,10 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (!this._dragPrimary) return;
+        if (!this._dragPrimary) {
+            this._updateHoverTarget(context, point);
+            return;
+        }
 
         const rawTargetX = this._dragPrimary.originXY.x + (point.x - this._dragOriginPointer.x);
         const rawTargetY = this._dragPrimary.originXY.y + (point.y - this._dragOriginPointer.y);
@@ -306,24 +328,30 @@ export class SelectTool extends Tool {
             return;
         }
 
-        if (this._connectorDrag) {
-            const { fromElement, fromWorldPoint, fromAnchor } = this._connectorDrag;
-            const targetElement = context.scene.getObjectAtPoint(point);
-            const endObjectId = targetElement && targetElement !== fromElement ? targetElement.id : null;
-            const endAnchor = endObjectId
-                ? this._hitTestAnchorPoint(context, targetElement, context.camera.worldToScreen(point.x, point.y))
-                : null;
+        if (this._arrowDrag) {
+            const { fromElement, fromWorldPoint, fromAnchor, moved } = this._arrowDrag;
 
-            context.eventBus.emit("tool:connector-drawn", {
-                startObjectId: fromElement.id,
-                startPoint: fromWorldPoint,
-                endObjectId,
-                endPoint: point,
-                startAnchor: fromAnchor,
-                endAnchor,
-            });
+            if (!moved) {
+                // Clique sem arrastar: duplica a forma na direção apontada, já conectada (estilo draw.io).
+                this._duplicateInDirection(context, fromElement, fromAnchor);
+            } else {
+                const targetElement = context.scene.getObjectAtPoint(point);
+                const endObjectId = targetElement && targetElement !== fromElement ? targetElement.id : null;
+                const endAnchor = endObjectId
+                    ? this._hitTestAnchorPoint(context, targetElement, context.camera.worldToScreen(point.x, point.y))
+                    : null;
 
-            this._connectorDrag = null;
+                context.eventBus.emit("tool:connector-drawn", {
+                    startObjectId: fromElement.id,
+                    startPoint: fromWorldPoint,
+                    endObjectId,
+                    endPoint: point,
+                    startAnchor: fromAnchor,
+                    endAnchor,
+                });
+            }
+
+            this._arrowDrag = null;
             this._redrawOverlay(context);
             return;
         }
@@ -378,6 +406,61 @@ export class SelectTool extends Tool {
         this._moved = false;
         this._activeGuides = null;
         this._redrawOverlay(context);
+    }
+
+    _startArrowDrag(context, element, handle, screenPoint) {
+        this._arrowDrag = {
+            fromElement: element,
+            fromWorldPoint: handle.worldPoint,
+            fromAnchor: handle.anchor,
+            originScreen: screenPoint,
+            moved: false,
+        };
+    }
+
+    /** Atualiza qual forma está em hover (pra mostrar as setas direcionais nela mesmo sem estar selecionada) — só redesenha quando muda de verdade, pra não redesenhar a cada pixel de movimento do mouse. */
+    _updateHoverTarget(context, point) {
+        const hit = context.scene.getObjectAtPoint(point);
+        const candidate = hit && !LINE_TYPES.has(hit.type) && !context.scene.isElementLocked(hit) ? hit : null;
+        if (candidate !== this._hoverTarget) {
+            this._hoverTarget = candidate;
+            this._redrawOverlay(context);
+        }
+    }
+
+    /**
+     * Clique (sem arrastar) numa seta direcional: cria uma cópia de
+     * `fromElement` do outro lado do vão, já ligada por um Connector —
+     * o atalho de "desenhar fluxograma rápido" do draw.io. O Connector
+     * em si nasce via o mesmo evento que o arraste-pra-conectar usa
+     * (tool:connector-drawn), então reaproveita toda a lógica/undo já
+     * existente — só a seleção final é sobrescrita pra cair na cópia
+     * nova, não no conector, pra dar pra editar/renomear na hora.
+     */
+    _duplicateInDirection(context, fromElement, anchor) {
+        const clone = fromElement.clone();
+        if (anchor.fy === 0) clone.y = fromElement.y - fromElement.height - DUPLICATE_GAP;
+        else if (anchor.fx === 1) clone.x = fromElement.x + fromElement.width + DUPLICATE_GAP;
+        else if (anchor.fy === 1) clone.y = fromElement.y + fromElement.height + DUPLICATE_GAP;
+        else clone.x = fromElement.x - fromElement.width - DUPLICATE_GAP;
+        clone.containerId = fromElement.containerId;
+        context.scene.addObject(clone);
+
+        const oppositeAnchor = { fx: 1 - anchor.fx, fy: 1 - anchor.fy };
+        const fromBounds = fromElement.getBounds();
+        const cloneBounds = clone.getBounds();
+
+        context.eventBus.emit("tool:connector-drawn", {
+            startObjectId: fromElement.id,
+            startPoint: { x: fromBounds.x + anchor.fx * fromBounds.width, y: fromBounds.y + anchor.fy * fromBounds.height },
+            endObjectId: clone.id,
+            endPoint: { x: cloneBounds.x + oppositeAnchor.fx * cloneBounds.width, y: cloneBounds.y + oppositeAnchor.fy * cloneBounds.height },
+            startAnchor: anchor,
+            endAnchor: oppositeAnchor,
+        });
+
+        context.selectionManager.select(clone);
+        context.renderer.markDirty();
     }
 
     /**
@@ -707,44 +790,47 @@ export class SelectTool extends Tool {
     _redrawOverlay(context) {
         context.renderer.clearInteractive();
         const selected = context.selectionManager.getSelected();
-        if (selected.length === 0) return;
-
         const single = this._singleSelection(context);
-        const isLineShaped = single && LINE_TYPES.has(single.type);
 
-        if (!isLineShaped) {
-            const ctx = context.renderer.interactiveCtx;
-            ctx.save();
-            ctx.strokeStyle = OVERLAY_COLOR;
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([5, 4]);
-            selected.forEach((element) => this._drawRotatedOutline(context, element));
-            ctx.restore();
+        if (selected.length > 0) {
+            const isLineShaped = single && LINE_TYPES.has(single.type);
+
+            if (!isLineShaped) {
+                const ctx = context.renderer.interactiveCtx;
+                ctx.save();
+                ctx.strokeStyle = OVERLAY_COLOR;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 4]);
+                selected.forEach((element) => this._drawRotatedOutline(context, element));
+                ctx.restore();
+            }
+
+            if (single && isLineShaped) {
+                const screenPoints = this._getEditableEndpoints(context, single).map((ep) =>
+                    context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y)
+                );
+                this._drawCircleHandles(context, screenPoints);
+
+                const waypointScreen = single.waypoints.map((p) => context.camera.worldToScreen(p.x, p.y));
+                this._drawSquareHandles(context, waypointScreen);
+
+                const addScreen = this._addHandlePositions(context, single).map(({ worldPoint }) =>
+                    context.camera.worldToScreen(worldPoint.x, worldPoint.y)
+                );
+                this._drawAddHandles(context, addScreen);
+            } else if (single) {
+                this._drawArrowHandles(context, this._getBoxHandlePositions(context, single));
+                if (RESIZABLE_TYPES.has(single.type)) {
+                    this._drawSquareHandles(context, this._getCornerHandlePositions(context, single));
+                }
+                this._drawRotateHandle(context, single);
+            }
         }
 
-        if (!single) return;
-
-        if (isLineShaped) {
-            const screenPoints = this._getEditableEndpoints(context, single).map((ep) =>
-                context.camera.worldToScreen(ep.worldPoint.x, ep.worldPoint.y)
-            );
-            this._drawCircleHandles(context, screenPoints);
-
-            const waypointScreen = single.waypoints.map((p) => context.camera.worldToScreen(p.x, p.y));
-            this._drawSquareHandles(context, waypointScreen);
-
-            const addScreen = this._addHandlePositions(context, single).map(({ worldPoint }) =>
-                context.camera.worldToScreen(worldPoint.x, worldPoint.y)
-            );
-            this._drawAddHandles(context, addScreen);
-            return;
+        // Setas direcionais também em hover, numa forma diferente da selecionada (ou sem nada selecionado) — estilo draw.io.
+        if (this._hoverTarget && this._hoverTarget !== single) {
+            this._drawArrowHandles(context, this._getBoxHandlePositions(context, this._hoverTarget));
         }
-
-        this._drawCircleHandles(context, this._getBoxHandlePositions(context, single));
-        if (RESIZABLE_TYPES.has(single.type)) {
-            this._drawSquareHandles(context, this._getCornerHandlePositions(context, single));
-        }
-        this._drawRotateHandle(context, single);
     }
 
     /** Contorno tracejado do bbox, desenhado como polígono rotacionado (acompanha a rotação do elemento). */
@@ -820,6 +906,46 @@ export class SelectTool extends Tool {
             ctx.fill();
         });
         ctx.restore();
+    }
+
+    /** Setas direcionais nas 4 bordas (N/E/S/W) — arrastar conecta, clicar sem arrastar duplica na direção. `points` vêm de _getBoxHandlePositions, cada um já com `.anchor`. */
+    _drawArrowHandles(context, points) {
+        const ctx = context.renderer.interactiveCtx;
+        ctx.save();
+        ctx.fillStyle = OVERLAY_COLOR;
+        ctx.globalAlpha = 0.9;
+        ctx.setLineDash([]);
+        points.forEach((p) => {
+            const { dx, dy } = this._arrowDirectionVector(p.anchor);
+            this._drawArrowGlyph(ctx, p.x, p.y, dx, dy);
+        });
+        ctx.restore();
+    }
+
+    _arrowDirectionVector(anchor) {
+        if (anchor.fy === 0) return { dx: 0, dy: -1 };
+        if (anchor.fx === 1) return { dx: 1, dy: 0 };
+        if (anchor.fy === 1) return { dx: 0, dy: 1 };
+        return { dx: -1, dy: 0 };
+    }
+
+    /** Triângulo apontando pra fora, centrado em (x,y), na direção (dx,dy) — mesmo visual do draw.io. */
+    _drawArrowGlyph(ctx, x, y, dx, dy) {
+        const len = 9;
+        const width = 6.5;
+        const nx = -dy;
+        const ny = dx;
+        const tipX = x + dx * len;
+        const tipY = y + dy * len;
+        const baseX = x - dx * len * 0.5;
+        const baseY = y - dy * len * 0.5;
+
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(baseX + nx * width, baseY + ny * width);
+        ctx.lineTo(baseX - nx * width, baseY - ny * width);
+        ctx.closePath();
+        ctx.fill();
     }
 
     _drawSquareHandles(context, points) {
