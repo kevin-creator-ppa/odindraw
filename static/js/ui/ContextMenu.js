@@ -1,5 +1,7 @@
 import { duplicateSelected, deleteSelected, groupSelected, ungroupSelected } from "../managers/objectActions.js";
 import { clipboard, copySelection, pasteClipboard } from "../managers/clipboard.js";
+import { extractStyle, applyStyle, styleClipboard } from "../managers/styleClipboard.js";
+import { setDefaultStyleFromElement } from "../elements/defaultStyleState.js";
 import { applyIcons } from "./icons.js";
 
 /**
@@ -33,7 +35,7 @@ export class ContextMenu {
         if (hit) {
             const groupMembers = hit.groupId ? scene.objects.filter((el) => el.groupId === hit.groupId) : [hit];
             if (!groupMembers.every((el) => selectionManager.isSelected(el))) selectionManager.selectMultiple(groupMembers);
-            items = this._objectItems();
+            items = this._objectItems(hit);
         } else {
             selectionManager.clear();
             items = this._emptyItems();
@@ -45,7 +47,7 @@ export class ContextMenu {
         this.menu.hidden = false;
     }
 
-    _objectItems() {
+    _objectItems(hit) {
         return [
             { label: "Duplicar", hint: "Ctrl+D", icon: "duplicate", action: () => duplicateSelected(this.engine) },
             { label: "Copiar", hint: "Ctrl+C", icon: "duplicate", action: () => copySelection(this.engine.selectionManager) },
@@ -59,7 +61,25 @@ export class ContextMenu {
             null,
             { label: "Bloquear/desbloquear", icon: "lock", action: () => this._toggle("locked") },
             { label: "Ocultar/exibir", icon: "eye", action: () => this._toggle("visible") },
+            null,
+            { label: "Copiar estilo", hint: "Ctrl+Alt+C", icon: "duplicate", action: () => (styleClipboard.captured = extractStyle(hit)) },
+            {
+                label: "Colar estilo",
+                hint: "Ctrl+Alt+V",
+                icon: "duplicate",
+                action: () => this._pasteStyle(),
+                disabled: !styleClipboard.captured,
+            },
+            { label: "Definir como padrão", icon: "bookmark", action: () => setDefaultStyleFromElement(hit) },
         ];
+    }
+
+    _pasteStyle() {
+        const { selectionManager, renderer, historyManager } = this.engine;
+        if (!styleClipboard.captured) return;
+        selectionManager.getSelected().forEach((el) => applyStyle(el, styleClipboard.captured));
+        renderer.markDirty();
+        historyManager?.pushSnapshot();
     }
 
     _emptyItems() {

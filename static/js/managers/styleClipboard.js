@@ -4,6 +4,9 @@
  * em posição/tamanho/conteúdo.
  */
 
+/** Estilo copiado em memória, compartilhado entre o atalho de teclado e o menu de contexto. */
+export const styleClipboard = { captured: null };
+
 function textHostOf(element) {
     if (element.type === "text") return element;
     return element.textLabel ?? null;

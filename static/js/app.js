@@ -34,7 +34,7 @@ import { exportSvg } from "./io/ExportSvg.js";
 import { exportPdf } from "./io/ExportPdf.js";
 import { exportDrawio } from "./io/ExportDrawio.js";
 import { computeSceneBounds, computeElementsBounds, buildSvgString } from "./io/svgBuilder.js";
-import { extractStyle, applyStyle } from "./managers/styleClipboard.js";
+import { extractStyle, applyStyle, styleClipboard } from "./managers/styleClipboard.js";
 import { copySelection, pasteClipboard } from "./managers/clipboard.js";
 import { applyDefaultStyle } from "./elements/defaultStyleState.js";
 import { clamp } from "./utils/geometry.js";
@@ -909,7 +909,6 @@ function initClipboardShortcuts(engine) {
 /** Ctrl/Cmd+Alt+C copia o estilo (cor/traço/fonte/setas) do elemento selecionado; Ctrl/Cmd+Alt+V aplica em todos os selecionados. */
 function initFormatPainterShortcuts(engine) {
     const EDITABLE_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
-    let copiedStyle = null;
 
     window.addEventListener("keydown", (event) => {
         if (EDITABLE_TAGS.has(event.target.tagName)) return;
@@ -919,16 +918,16 @@ function initFormatPainterShortcuts(engine) {
         if (key === "c") {
             const [element] = engine.selectionManager.getSelected();
             if (!element) return;
-            copiedStyle = extractStyle(element);
+            styleClipboard.captured = extractStyle(element);
             return;
         }
 
         if (key === "v") {
-            if (!copiedStyle) return;
+            if (!styleClipboard.captured) return;
             const selected = engine.selectionManager.getSelected();
             if (selected.length === 0) return;
             event.preventDefault();
-            selected.forEach((el) => applyStyle(el, copiedStyle));
+            selected.forEach((el) => applyStyle(el, styleClipboard.captured));
             engine.renderer.markDirty();
             engine.historyManager?.pushSnapshot();
         }
