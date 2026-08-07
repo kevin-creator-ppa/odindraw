@@ -476,6 +476,21 @@ function initGridToggle(renderer) {
     });
 }
 
+const SNAP_TO_GRID_STORAGE_KEY = "odindraw:snap-to-grid";
+
+/** Encaixar na grade ao arrastar — independente da grade estar visível (como "View > Snap to Grid" do draw.io). */
+function initSnapToGridToggle(renderer) {
+    const button = document.querySelector('[data-action="toggle-snap-grid"]');
+    const apply = (enabled) => {
+        button.setAttribute("data-active", String(enabled));
+        renderer.setSnapToGridEnabled(enabled);
+        localStorage.setItem(SNAP_TO_GRID_STORAGE_KEY, String(enabled));
+    };
+    button.addEventListener("click", () => apply(button.getAttribute("data-active") !== "true"));
+    const stored = localStorage.getItem(SNAP_TO_GRID_STORAGE_KEY);
+    apply(stored === null ? true : stored === "true");
+}
+
 const GRID_SETTINGS_STORAGE_KEY = "odindraw:grid-settings";
 
 /** Personalização da grade (tamanho/cor/pontos-ou-linhas, estilo draw.io) — preferência global persistida em localStorage. */
@@ -1017,6 +1032,7 @@ function init() {
     initZoomControls(engine);
     initGridToggle(engine.renderer);
     initGridSettings(engine.renderer);
+    initSnapToGridToggle(engine.renderer);
     initRulerToggle(engine.renderer);
     initSketchToggle(engine.renderer);
     initToolSelection(engine.toolManager);

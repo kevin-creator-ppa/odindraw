@@ -39,6 +39,7 @@ export class Renderer {
         this.interactiveCtx = interactiveCanvas.getContext("2d");
 
         this.gridEnabled = true;
+        this.snapToGridEnabled = true;
         this.gridSpacing = BASE_GRID_SPACING;
         this.gridStyle = "dots"; // "dots" | "lines"
         this.gridColorOverride = null; // null = segue a cor do tema (_gridDotColor)
@@ -69,6 +70,11 @@ export class Renderer {
     setGridEnabled(enabled) {
         this.gridEnabled = enabled;
         this.markDirty();
+    }
+
+    /** Independente da visibilidade da grade (como "View > Snap to Grid" do draw.io) — dá pra encaixar em grade invisível, ou ver a grade sem encaixar. */
+    setSnapToGridEnabled(enabled) {
+        this.snapToGridEnabled = enabled;
     }
 
     setGridSpacing(spacing) {

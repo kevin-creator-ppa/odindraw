@@ -61,6 +61,9 @@ export const ICONS = {
     ruler: svg(
         '<rect x="2.5" y="9" width="19" height="6" rx="1"/><path d="M6 9v2.5M9.5 9v1.5M13 9v2.5M16.5 9v1.5M20 9v2.5"/>'
     ),
+    magnet: svg(
+        '<path d="M6 4h4v9a2 2 0 0 0 4 0V4h4v9a6 6 0 0 1-12 0z"/><path d="M6 4v4H4"/><path d="M18 4v4h2"/>'
+    ),
     sun: svg(
         '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/>'
     ),

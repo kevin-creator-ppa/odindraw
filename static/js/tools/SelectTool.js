@@ -279,14 +279,14 @@ export class SelectTool extends Tool {
 
         if (snap.dx !== 0) {
             targetX += snap.dx;
-        } else if (context.renderer.gridEnabled) {
+        } else if (context.renderer.snapToGridEnabled) {
             const spacing = context.renderer.gridSpacing;
             targetX = Math.round(targetX / spacing) * spacing;
         }
 
         if (snap.dy !== 0) {
             targetY += snap.dy;
-        } else if (context.renderer.gridEnabled) {
+        } else if (context.renderer.snapToGridEnabled) {
             const spacing = context.renderer.gridSpacing;
             targetY = Math.round(targetY / spacing) * spacing;
         }
@@ -598,7 +598,7 @@ export class SelectTool extends Tool {
     }
 
     _snapToGrid(context, point) {
-        if (!context.renderer.gridEnabled) return point;
+        if (!context.renderer.snapToGridEnabled) return point;
         const spacing = context.renderer.gridSpacing;
         return {
             x: Math.round(point.x / spacing) * spacing,
