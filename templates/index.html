@@ -440,6 +440,19 @@
                         <button data-action="remove-column" title="Remover coluna">-Coluna</button>
                     </div>
                 </div>
+                <div class="property" data-table-only hidden>
+                    <label>Mesclar células a partir de</label>
+                    <div class="size-inputs">
+                        <input type="number" min="0" value="0" data-merge-row title="Linha (0 = primeira)" placeholder="Linha">
+                        <span>×</span>
+                        <input type="number" min="0" value="0" data-merge-col title="Coluna (0 = primeira)" placeholder="Coluna">
+                    </div>
+                    <div class="segmented">
+                        <button data-action="merge-right" title="Mescla com a célula à direita">Mesclar →</button>
+                        <button data-action="merge-down" title="Mescla com a célula abaixo">Mesclar ↓</button>
+                        <button data-action="split-cell" title="Desfaz a mesclagem dessa célula">Dividir</button>
+                    </div>
+                </div>
                 <div class="property" data-resizable-only hidden>
                     <label>Tamanho</label>
                     <div class="size-inputs">

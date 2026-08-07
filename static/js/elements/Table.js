@@ -8,13 +8,20 @@ const DEFAULT_COLS = 3;
  * dentro do bbox — redimensionar a tabela redimensiona todas as
  * células junto). Cada célula guarda um texto simples, editável com
  * duplo clique (ver `cellAtPoint` + TextEditor.js, modo "cell").
+ *
+ * Células podem ser mescladas (`merges`, estilo draw.io/Excel): cada
+ * entrada é `{row, col, rowSpan, colSpan}` e descreve um retângulo de
+ * células cobrindo (row,col) como âncora. Toda leitura/escrita de uma
+ * célula coberta por uma mesclagem (que não a âncora) é redirecionada
+ * pra âncora — ver `_mergeInfoAt`.
  */
 export class Table extends Element {
-    constructor({ rows = DEFAULT_ROWS, cols = DEFAULT_COLS, cells, ...props } = {}) {
+    constructor({ rows = DEFAULT_ROWS, cols = DEFAULT_COLS, cells, merges, ...props } = {}) {
         super("table", props);
         this.rows = rows;
         this.cols = cols;
         this.cells = cells ?? Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
+        this.merges = (merges ?? []).map((m) => ({ ...m }));
         this.editingCell = null;
     }
 
@@ -22,13 +29,89 @@ export class Table extends Element {
         return { w: this.width / this.cols, h: this.height / this.rows };
     }
 
-    /** Bounding box (mundo, sem levar rotação em conta) de uma célula — usado pra posicionar o editor inline. */
-    cellBounds(row, col) {
-        const { w, h } = this.cellSize();
-        return { x: this.x + col * w, y: this.y + row * h, width: w, height: h };
+    /** Mesclagem que cobre (row,col), ou uma região 1x1 se a célula não estiver mesclada. */
+    _mergeInfoAt(row, col) {
+        const merge = this.merges.find(
+            (m) => row >= m.row && row < m.row + m.rowSpan && col >= m.col && col < m.col + m.colSpan
+        );
+        return merge ?? { row, col, rowSpan: 1, colSpan: 1 };
     }
 
-    /** Célula sob um ponto de mundo (desfazendo a rotação atual), ou null se o ponto cair fora da tabela. */
+    /** Todas as regiões a desenhar: cada mesclagem uma vez (pela âncora) + toda célula não coberta como 1x1. */
+    _allRegions() {
+        const covered = new Set();
+        this.merges.forEach((m) => {
+            for (let r = m.row; r < m.row + m.rowSpan; r++) {
+                for (let c = m.col; c < m.col + m.colSpan; c++) covered.add(`${r},${c}`);
+            }
+        });
+
+        const regions = this.merges.map((m) => ({ ...m }));
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                if (!covered.has(`${r},${c}`)) regions.push({ row: r, col: c, rowSpan: 1, colSpan: 1 });
+            }
+        }
+        return regions;
+    }
+
+    static _regionsOverlap(a, b) {
+        return (
+            a.row < b.row + b.rowSpan &&
+            a.row + a.rowSpan > b.row &&
+            a.col < b.col + b.colSpan &&
+            a.col + a.colSpan > b.col
+        );
+    }
+
+    /** Mescla o retângulo de células a partir de (row,col); mesclagens existentes que se sobrepõem são desfeitas primeiro. Texto das células cobertas (exceto a âncora) é perdido. */
+    mergeCells(row, col, rowSpan, colSpan) {
+        rowSpan = Math.max(1, Math.min(rowSpan, this.rows - row));
+        colSpan = Math.max(1, Math.min(colSpan, this.cols - col));
+        if (rowSpan <= 1 && colSpan <= 1) return;
+
+        const region = { row, col, rowSpan, colSpan };
+        this.merges = this.merges.filter((m) => !Table._regionsOverlap(m, region));
+        for (let r = row; r < row + rowSpan; r++) {
+            for (let c = col; c < col + colSpan; c++) {
+                if (r !== row || c !== col) this.cells[r][c] = "";
+            }
+        }
+        this.merges.push(region);
+    }
+
+    /** Desfaz a mesclagem que cobre (row,col), se houver — as células voltam a ser individuais (texto da âncora é mantido nela, as demais continuam vazias). */
+    splitCell(row, col) {
+        const index = this.merges.findIndex(
+            (m) => row >= m.row && row < m.row + m.rowSpan && col >= m.col && col < m.col + m.colSpan
+        );
+        if (index !== -1) this.merges.splice(index, 1);
+    }
+
+    /** Remove/encolhe mesclagens que ficaram fora dos limites depois de remover linha/coluna. */
+    _clampMerges() {
+        this.merges = this.merges
+            .map((m) => ({
+                ...m,
+                rowSpan: Math.min(m.rowSpan, this.rows - m.row),
+                colSpan: Math.min(m.colSpan, this.cols - m.col),
+            }))
+            .filter((m) => m.row < this.rows && m.col < this.cols && m.rowSpan >= 1 && m.colSpan >= 1 && (m.rowSpan > 1 || m.colSpan > 1));
+    }
+
+    /** Bounding box (mundo, sem levar rotação em conta) de uma célula — o retângulo inteiro da mesclagem, se houver. Usado pra posicionar o editor inline. */
+    cellBounds(row, col) {
+        const { w, h } = this.cellSize();
+        const info = this._mergeInfoAt(row, col);
+        return {
+            x: this.x + info.col * w,
+            y: this.y + info.row * h,
+            width: info.colSpan * w,
+            height: info.rowSpan * h,
+        };
+    }
+
+    /** Célula sob um ponto de mundo (desfazendo a rotação atual) — já resolvida pra âncora se cair numa célula mesclada. Null se o ponto cair fora da tabela. */
     cellAtPoint(point) {
         if (!this.containsPoint(point)) return null;
 
@@ -43,7 +126,8 @@ export class Table extends Element {
         const { w, h } = this.cellSize();
         const col = Math.min(this.cols - 1, Math.max(0, Math.floor((localX - this.x) / w)));
         const row = Math.min(this.rows - 1, Math.max(0, Math.floor((localY - this.y) / h)));
-        return { row, col };
+        const info = this._mergeInfoAt(row, col);
+        return { row: info.row, col: info.col };
     }
 
     setCellText(row, col, text) {
@@ -60,6 +144,7 @@ export class Table extends Element {
         if (this.rows <= 1) return;
         this.cells.pop();
         this.rows -= 1;
+        this._clampMerges();
     }
 
     addColumn() {
@@ -71,6 +156,7 @@ export class Table extends Element {
         if (this.cols <= 1) return;
         this.cells.forEach((row) => row.pop());
         this.cols -= 1;
+        this._clampMerges();
     }
 
     _fontSize(cellHeight) {
@@ -80,37 +166,29 @@ export class Table extends Element {
     drawShape(ctx, x, y, width, height) {
         const cellW = width / this.cols;
         const cellH = height / this.rows;
+        const regions = this._allRegions();
 
         if (this.style.fill !== "transparent") ctx.fillRect(x, y, width, height);
 
         if (this.style.strokeWidth > 0) {
-            for (let r = 0; r <= this.rows; r++) {
-                ctx.beginPath();
-                ctx.moveTo(x, y + r * cellH);
-                ctx.lineTo(x + width, y + r * cellH);
-                ctx.stroke();
-            }
-            for (let c = 0; c <= this.cols; c++) {
-                ctx.beginPath();
-                ctx.moveTo(x + c * cellW, y);
-                ctx.lineTo(x + c * cellW, y + height);
-                ctx.stroke();
-            }
+            regions.forEach(({ row, col, rowSpan, colSpan }) => {
+                ctx.strokeRect(x + col * cellW, y + row * cellH, colSpan * cellW, rowSpan * cellH);
+            });
         }
 
         ctx.save();
         ctx.fillStyle = this.resolvedStroke();
-        ctx.font = `${this._fontSize(cellH)}px Inter, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
-                if (this.editingCell && this.editingCell.row === r && this.editingCell.col === c) continue;
-                const text = this.cells[r]?.[c];
-                if (!text) continue;
-                this._drawCellText(ctx, text, x + c * cellW + cellW / 2, y + r * cellH + cellH / 2, cellW - 8);
-            }
-        }
+        regions.forEach(({ row, col, rowSpan, colSpan }) => {
+            if (this.editingCell && this.editingCell.row === row && this.editingCell.col === col) return;
+            const text = this.cells[row]?.[col];
+            if (!text) return;
+            const regionW = colSpan * cellW;
+            const regionH = rowSpan * cellH;
+            ctx.font = `${this._fontSize(regionH)}px Inter, sans-serif`;
+            this._drawCellText(ctx, text, x + col * cellW + regionW / 2, y + row * cellH + regionH / 2, regionW - 8);
+        });
         ctx.restore();
     }
 
@@ -128,30 +206,26 @@ export class Table extends Element {
         const cellW = this.width / this.cols;
         const cellH = this.height / this.rows;
         const stroke = this.resolvedStroke();
+        const regions = this._allRegions();
 
         let lines = "";
         if (this.style.strokeWidth > 0) {
-            for (let r = 0; r <= this.rows; r++) {
-                const yPos = this.y + r * cellH;
-                lines += `<line x1="${this.x}" y1="${yPos}" x2="${this.x + this.width}" y2="${yPos}" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" />`;
-            }
-            for (let c = 0; c <= this.cols; c++) {
-                const xPos = this.x + c * cellW;
-                lines += `<line x1="${xPos}" y1="${this.y}" x2="${xPos}" y2="${this.y + this.height}" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" />`;
-            }
+            regions.forEach(({ row, col, rowSpan, colSpan }) => {
+                const rx = this.x + col * cellW;
+                const ry = this.y + row * cellH;
+                lines += `<rect x="${rx}" y="${ry}" width="${colSpan * cellW}" height="${rowSpan * cellH}" fill="none" stroke="${stroke}" stroke-width="${this.style.strokeWidth}" />`;
+            });
         }
 
-        const fontSize = this._fontSize(cellH);
         let texts = "";
-        for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
-                const text = this.cells[r]?.[c];
-                if (!text) continue;
-                const cx = this.x + c * cellW + cellW / 2;
-                const cy = this.y + r * cellH + cellH / 2;
-                texts += `<text x="${cx}" y="${cy}" font-family="Inter, sans-serif" font-size="${fontSize}" text-anchor="middle" dominant-baseline="middle" fill="${stroke}">${this._escapeXml(text)}</text>`;
-            }
-        }
+        regions.forEach(({ row, col, rowSpan, colSpan }) => {
+            const text = this.cells[row]?.[col];
+            if (!text) return;
+            const fontSize = this._fontSize(rowSpan * cellH);
+            const cx = this.x + col * cellW + (colSpan * cellW) / 2;
+            const cy = this.y + row * cellH + (rowSpan * cellH) / 2;
+            texts += `<text x="${cx}" y="${cy}" font-family="Inter, sans-serif" font-size="${fontSize}" text-anchor="middle" dominant-baseline="middle" fill="${stroke}">${this._escapeXml(text)}</text>`;
+        });
 
         const fill =
             this.style.fill !== "transparent"
@@ -165,13 +239,20 @@ export class Table extends Element {
     }
 
     serialize() {
-        return { ...super.serialize(), rows: this.rows, cols: this.cols, cells: this.cells.map((row) => [...row]) };
+        return {
+            ...super.serialize(),
+            rows: this.rows,
+            cols: this.cols,
+            cells: this.cells.map((row) => [...row]),
+            merges: this.merges.map((m) => ({ ...m })),
+        };
     }
 
-    /** Sobrescreve Element.clone(): sem isso, a cópia compartilharia a mesma matriz `cells` do original (edição em um vazaria pro outro). */
+    /** Sobrescreve Element.clone(): sem isso, a cópia compartilharia a mesma matriz `cells`/`merges` do original (edição em um vazaria pro outro). */
     clone() {
         const copy = super.clone();
         copy.cells = this.cells.map((row) => [...row]);
+        copy.merges = this.merges.map((m) => ({ ...m }));
         copy.editingCell = null;
         return copy;
     }

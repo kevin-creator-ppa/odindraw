@@ -107,8 +107,10 @@ export class PropertiesPanel {
             ...this.strokeStyleGroup.querySelectorAll("button"),
             ...this.fillPatternGroup.querySelectorAll("button"),
             ...document.querySelectorAll(
-                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"], [data-action="align-left"], [data-action="align-center-h"], [data-action="align-right"], [data-action="align-top"], [data-action="align-middle-v"], [data-action="align-bottom"], [data-action="distribute-h"], [data-action="distribute-v"]'
+                '[data-action="send-back"], [data-action="send-backward"], [data-action="bring-forward"], [data-action="bring-front"], [data-action="duplicate-selected"], [data-action="delete-selected"], [data-action="add-row"], [data-action="remove-row"], [data-action="add-column"], [data-action="remove-column"], [data-action="merge-right"], [data-action="merge-down"], [data-action="split-cell"], [data-action="align-left"], [data-action="align-center-h"], [data-action="align-right"], [data-action="align-top"], [data-action="align-middle-v"], [data-action="align-bottom"], [data-action="distribute-h"], [data-action="distribute-v"]'
             ),
+            document.querySelector("[data-merge-row]"),
+            document.querySelector("[data-merge-col]"),
         ];
 
         this._textOnlyRows = document.querySelectorAll("[data-text-only]");
@@ -314,6 +316,15 @@ export class PropertiesPanel {
             .querySelector('[data-action="remove-column"]')
             .addEventListener("click", () => this._applyTable((t) => t.removeColumn()));
 
+        document.querySelector('[data-action="merge-right"]').addEventListener("click", () => this._mergeTableCell(1, 2));
+        document.querySelector('[data-action="merge-down"]').addEventListener("click", () => this._mergeTableCell(2, 1));
+        document.querySelector('[data-action="split-cell"]').addEventListener("click", () => {
+            if (this._current?.type !== "table") return;
+            this._current.splitCell(this._mergeRow(), this._mergeCol());
+            this.renderer.markDirty();
+            this._commit();
+        });
+
         document.querySelector('[data-action="duplicate-selected"]').addEventListener("click", () => {
             duplicateSelected({
                 scene: this.scene,
@@ -494,6 +505,22 @@ export class PropertiesPanel {
         this._selection.forEach((el) => {
             if (el.type === "table") mutate(el);
         });
+        this.renderer.markDirty();
+        this._commit();
+    }
+
+    _mergeRow() {
+        return Math.max(0, Math.round(Number(document.querySelector("[data-merge-row]").value) || 0));
+    }
+
+    _mergeCol() {
+        return Math.max(0, Math.round(Number(document.querySelector("[data-merge-col]").value) || 0));
+    }
+
+    /** Mescla célula (linha, coluna informadas nos campos ao lado) com sua vizinha direita/abaixo — só faz sentido pra UMA tabela por vez (a `_current`), não em lote. */
+    _mergeTableCell(rowSpan, colSpan) {
+        if (this._current?.type !== "table") return;
+        this._current.mergeCells(this._mergeRow(), this._mergeCol(), rowSpan, colSpan);
         this.renderer.markDirty();
         this._commit();
     }
