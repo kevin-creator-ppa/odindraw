@@ -1,5 +1,4 @@
 import { Tool } from "./Tool.js";
-import { BASE_GRID_SPACING } from "../core/Renderer.js";
 import { LINE_TYPES, RESIZABLE_TYPES } from "../elements/typeGroups.js";
 import { computeAlignmentSnap, GUIDE_COLOR } from "./alignmentGuides.js";
 import { naturalBendPoint } from "../elements/routeGeometry.js";
@@ -281,13 +280,15 @@ export class SelectTool extends Tool {
         if (snap.dx !== 0) {
             targetX += snap.dx;
         } else if (context.renderer.gridEnabled) {
-            targetX = Math.round(targetX / BASE_GRID_SPACING) * BASE_GRID_SPACING;
+            const spacing = context.renderer.gridSpacing;
+            targetX = Math.round(targetX / spacing) * spacing;
         }
 
         if (snap.dy !== 0) {
             targetY += snap.dy;
         } else if (context.renderer.gridEnabled) {
-            targetY = Math.round(targetY / BASE_GRID_SPACING) * BASE_GRID_SPACING;
+            const spacing = context.renderer.gridSpacing;
+            targetY = Math.round(targetY / spacing) * spacing;
         }
 
         const deltaX = targetX - this._dragPrimary.originXY.x;
@@ -598,9 +599,10 @@ export class SelectTool extends Tool {
 
     _snapToGrid(context, point) {
         if (!context.renderer.gridEnabled) return point;
+        const spacing = context.renderer.gridSpacing;
         return {
-            x: Math.round(point.x / BASE_GRID_SPACING) * BASE_GRID_SPACING,
-            y: Math.round(point.y / BASE_GRID_SPACING) * BASE_GRID_SPACING,
+            x: Math.round(point.x / spacing) * spacing,
+            y: Math.round(point.y / spacing) * spacing,
         };
     }
 

@@ -872,7 +872,7 @@ function initNudgeShortcuts(engine) {
         if (selected.length === 0) return;
         event.preventDefault();
 
-        const step = event.shiftKey ? BASE_GRID_SPACING : NUDGE_STEP;
+        const step = event.shiftKey ? engine.renderer.gridSpacing : NUDGE_STEP;
         selected.forEach((el) => el.translate(delta[0] * step, delta[1] * step));
         engine.renderer.markDirty();
         nudged = true;
