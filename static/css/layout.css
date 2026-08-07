@@ -223,7 +223,6 @@
 /* Menu hambúrguer principal — duas colunas (ações de arquivo | configurações) em vez de uma lista só, que tinha ficado alta demais e ou espremia tudo ou precisava rolar. Título de seção em vez de linhas divisórias soltas dá mais respiro visual. Altura limitada à viewport com rolagem (barra sempre invisível, ver base.css) só como rede de segurança em telas bem baixas. */
 .dropdown__menu--main {
     top: calc(100% + 6px);
-    display: flex;
     align-items: flex-start;
     max-height: calc(100vh - 72px);
     overflow-y: auto;
