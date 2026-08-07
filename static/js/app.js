@@ -26,6 +26,7 @@ import { PresentationMode } from "./ui/PresentationMode.js";
 import { Minimap } from "./ui/Minimap.js";
 import { ContextMenu } from "./ui/ContextMenu.js";
 import { ShortcutsModal } from "./ui/ShortcutsModal.js";
+import { EditDiagramModal } from "./ui/EditDiagramModal.js";
 import { TextEditor } from "./ui/TextEditor.js";
 import { SaveLoad } from "./io/SaveLoad.js";
 import { exportPng, copyPngToClipboard } from "./io/ExportPng.js";
@@ -1039,6 +1040,7 @@ function init() {
     new Minimap(engine);
     new ContextMenu(engine);
     new ShortcutsModal();
+    new EditDiagramModal(engine);
 
     // Hook de depuração (console do browser): inspecionar scene/camera/renderer em runtime.
     window.__odindraw = engine;

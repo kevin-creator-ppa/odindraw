@@ -91,6 +91,17 @@
     color: var(--accent);
 }
 
+.btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+}
+
+.btn--primary:hover {
+    filter: brightness(1.08);
+    background: var(--accent);
+}
+
 /* Ícones SVG (ui/icons.js): tamanho consistente em qualquer contexto de botão. */
 [data-icon] svg {
     display: block;
@@ -1209,6 +1220,94 @@
     font-family: inherit;
     color: var(--text-secondary);
     white-space: nowrap;
+}
+
+/* Modal "Editar diagrama (JSON)" — mesma estrutura visual do shortcuts-modal, com um textarea grande no lugar da lista de atalhos. */
+.edit-diagram-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-diagram-modal[hidden] {
+    display: none;
+}
+
+.edit-diagram-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.edit-diagram-modal__panel {
+    position: relative;
+    width: min(680px, 92vw);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.edit-diagram-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.edit-diagram-modal__header h2 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.edit-diagram-modal__body {
+    padding: 12px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    flex: 1;
+}
+
+.edit-diagram-modal__hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.edit-diagram-modal__textarea {
+    flex: 1;
+    min-height: 320px;
+    resize: vertical;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+}
+
+.edit-diagram-modal__error {
+    font-size: 12px;
+    color: #e03131;
+}
+
+.edit-diagram-modal__error[hidden] {
+    display: none;
+}
+
+.edit-diagram-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 .context-menu {

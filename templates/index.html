@@ -62,6 +62,10 @@
                             <span class="menu-item__icon" data-icon="file-text"></span>
                             <span class="menu-item__label">Exportar .drawio</span>
                         </button>
+                        <button class="menu-item" data-action="edit-diagram" title="Ver/editar o JSON bruto da página atual">
+                            <span class="menu-item__icon" data-icon="file-text"></span>
+                            <span class="menu-item__label">Editar diagrama (JSON)</span>
+                        </button>
                         <span class="menu-divider"></span>
                         <div class="menu-item menu-item--static">
                             <span class="menu-item__label">Tema</span>
@@ -475,6 +479,25 @@
                 <button class="btn btn--icon" data-action="close-shortcuts" data-icon="close" title="Fechar"></button>
             </div>
             <div class="shortcuts-modal__body" data-shortcuts-body></div>
+        </div>
+    </div>
+
+    <div class="edit-diagram-modal" data-edit-diagram-modal hidden>
+        <div class="edit-diagram-modal__backdrop" data-edit-diagram-backdrop></div>
+        <div class="edit-diagram-modal__panel">
+            <div class="edit-diagram-modal__header">
+                <h2>Editar diagrama (JSON)</h2>
+                <button class="btn btn--icon" data-action="close-edit-diagram" data-icon="close" title="Fechar"></button>
+            </div>
+            <div class="edit-diagram-modal__body">
+                <p class="edit-diagram-modal__hint">Edite o JSON da página atual e clique em Aplicar. Isso substitui todo o conteúdo desta página (dá pra desfazer com Ctrl+Z).</p>
+                <textarea class="edit-diagram-modal__textarea" data-edit-diagram-textarea spellcheck="false"></textarea>
+                <p class="edit-diagram-modal__error" data-edit-diagram-error hidden></p>
+                <div class="edit-diagram-modal__actions">
+                    <button class="btn" data-action="close-edit-diagram">Cancelar</button>
+                    <button class="btn btn--primary" data-action="apply-edit-diagram">Aplicar</button>
+                </div>
+            </div>
         </div>
     </div>
 
