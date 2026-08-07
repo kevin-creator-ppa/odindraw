@@ -71,6 +71,8 @@ export class PropertiesPanel {
         this.lockBtn = document.querySelector('[data-action="toggle-lock"]');
         this.visibleBtn = document.querySelector('[data-action="toggle-visible"]');
         this.setDefaultStyleBtn = document.querySelector('[data-action="set-default-style"]');
+        this.customDataContainer = document.querySelector("[data-custom-data-rows]");
+        this.addCustomDataBtn = document.querySelector('[data-action="add-custom-data-row"]');
 
         this.inputs = [
             this.fill,
@@ -99,6 +101,7 @@ export class PropertiesPanel {
             this.lockBtn,
             this.visibleBtn,
             this.setDefaultStyleBtn,
+            this.addCustomDataBtn,
             ...this.alignButtons,
             ...this.strokeWidthGroup.querySelectorAll("button"),
             ...this.strokeStyleGroup.querySelectorAll("button"),
@@ -114,6 +117,7 @@ export class PropertiesPanel {
         this._resizableOnlyRows = document.querySelectorAll("[data-resizable-only]");
         this._tableOnlyRows = document.querySelectorAll("[data-table-only]");
         this._multiOnlyRows = document.querySelectorAll("[data-multi-only]");
+        this._singleOnlyRows = document.querySelectorAll("[data-single-only]");
         this._roundedOnlyRows = document.querySelectorAll("[data-rounded-only]");
         this._textEmptyHint = document.querySelector("[data-text-empty-hint]");
 
@@ -347,6 +351,17 @@ export class PropertiesPanel {
             if (!this._current) return;
             setDefaultStyleFromElement(this._current);
         });
+
+        this.addCustomDataBtn?.addEventListener("click", () => {
+            if (!this._current) return;
+            let n = 1;
+            while (Object.prototype.hasOwnProperty.call(this._current.customData, `campo${n}`)) n++;
+            const key = `campo${n}`;
+            this._current.customData[key] = "";
+            const row = this._buildCustomDataRow(this._current, key, "");
+            this.customDataContainer.appendChild(row);
+            row.querySelector("input").focus();
+        });
     }
 
     /** Botão independente (não exclusivo) que alterna um campo booleano do elemento (ex.: flipX/flipY). */
@@ -539,6 +554,64 @@ export class PropertiesPanel {
         this.fill2.value = element.style.fill2 || "#ffffff";
         this.link.value = element.link ?? "";
         this._syncLinkPageSelect(this.link.value);
+        this._renderCustomDataRows(element);
+    }
+
+    /** Editor de "Dados personalizados" (draw.io "Edit Data") — só faz sentido com um único elemento selecionado; opera direto em element.customData. */
+    _renderCustomDataRows(element) {
+        if (!this.customDataContainer) return;
+        this.customDataContainer.innerHTML = "";
+        Object.entries(element.customData ?? {}).forEach(([key, value]) => {
+            this.customDataContainer.appendChild(this._buildCustomDataRow(element, key, value));
+        });
+    }
+
+    _buildCustomDataRow(element, key, value) {
+        const row = document.createElement("div");
+        row.className = "custom-data__row";
+
+        const keyInput = document.createElement("input");
+        keyInput.type = "text";
+        keyInput.value = key;
+        keyInput.placeholder = "chave";
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.value = value;
+        valueInput.placeholder = "valor";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "custom-data__remove";
+        removeBtn.textContent = "×";
+        removeBtn.title = "Remover campo";
+
+        keyInput.addEventListener("change", () => {
+            const newKey = keyInput.value.trim();
+            if (!newKey || newKey === key) {
+                keyInput.value = key;
+                return;
+            }
+            delete element.customData[key];
+            element.customData[newKey] = valueInput.value;
+            key = newKey;
+            this._commit();
+        });
+
+        valueInput.addEventListener("change", () => {
+            element.customData[key] = valueInput.value;
+            this._commit();
+        });
+
+        removeBtn.addEventListener("click", () => {
+            delete element.customData[key];
+            row.remove();
+            this._commit();
+        });
+
+        row.appendChild(keyInput);
+        row.appendChild(valueInput);
+        row.appendChild(removeBtn);
+        return row;
     }
 
     /** Se o link atual for `page:<id>`, seleciona essa página no dropdown; senão (URL externa ou vazio), volta ao "Ou vincular a uma página…". */
@@ -559,6 +632,7 @@ export class PropertiesPanel {
         this._resizableOnlyRows.forEach((row) => (row.hidden = !isResizable));
         this._tableOnlyRows.forEach((row) => (row.hidden = !isTable));
         this._multiOnlyRows.forEach((row) => (row.hidden = selectionCount < 2));
+        this._singleOnlyRows.forEach((row) => (row.hidden = selectionCount !== 1));
         this._roundedOnlyRows.forEach((row) => (row.hidden = element?.type !== "rectangle"));
         this._textEmptyHint.hidden = !element || isText;
     }

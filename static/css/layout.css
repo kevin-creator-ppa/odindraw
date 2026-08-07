@@ -102,6 +102,51 @@
     background: var(--accent);
 }
 
+.btn--small {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px dashed var(--border-color);
+    width: 100%;
+}
+
+/* Editor de dados personalizados (draw.io "Edit Data") — linhas chave/valor no elemento selecionado. */
+.custom-data {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.custom-data__row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.custom-data__row input {
+    min-width: 0;
+    flex: 1;
+    padding: 5px 7px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.custom-data__remove {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+    border-radius: 6px;
+    color: var(--text-secondary);
+}
+
+.custom-data__remove:hover {
+    color: #e03131;
+    background: var(--bg-hover);
+}
+
 /* Ícones SVG (ui/icons.js): tamanho consistente em qualquer contexto de botão. */
 [data-icon] svg {
     display: block;

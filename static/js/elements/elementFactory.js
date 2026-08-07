@@ -57,5 +57,6 @@ export function elementFromJSON(data) {
     element.layerId = data.layerId ?? null;
     element.link = data.link ?? null;
     element.containerId = data.containerId ?? null;
+    element.customData = { ...(data.customData ?? {}) };
     return element;
 }

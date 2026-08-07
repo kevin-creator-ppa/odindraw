@@ -46,6 +46,7 @@ export class Element {
         this.layerId = null;
         this.link = null;
         this.containerId = null;
+        this.customData = {};
         this.style = { ...defaultStyle(), ...style };
     }
 
@@ -183,6 +184,7 @@ export class Element {
             layerId: this.layerId,
             link: this.link,
             containerId: this.containerId,
+            customData: { ...this.customData },
             style: { ...this.style },
             ...(this.textLabel ? { textLabel: { ...this.textLabel } } : {}),
         };
@@ -193,6 +195,7 @@ export class Element {
         const copy = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
         copy.id = nextId(this.type);
         copy.style = { ...this.style };
+        copy.customData = { ...this.customData };
         if (this.textLabel) copy.textLabel = { ...this.textLabel };
         return copy;
     }
