@@ -20,6 +20,13 @@
                             <span class="menu-item__label">Novo</span>
                             <span class="menu-item__hint">Ctrl+N</span>
                         </button>
+                        <div class="dropdown" data-dropdown="new-from-template">
+                            <button class="menu-item" data-action="toggle-template-menu" title="Novo a partir de um modelo">
+                                <span class="menu-item__icon" data-icon="file-plus"></span>
+                                <span class="menu-item__label">Novo a partir de um modelo</span>
+                            </button>
+                            <div class="dropdown__menu dropdown__menu--nested" data-template-menu></div>
+                        </div>
                         <div class="dropdown" data-dropdown="open-diagram">
                             <button class="menu-item" data-action="open" title="Abrir (Ctrl+O)">
                                 <span class="menu-item__icon" data-icon="folder-open"></span>

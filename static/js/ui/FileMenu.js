@@ -1,18 +1,30 @@
+import { DIAGRAM_TEMPLATES } from "../io/diagramTemplates.js";
+
 /**
  * Liga os botões Novo/Abrir/Salvar da topbar ao SaveLoad: monta o
- * dropdown "Abrir" sob demanda (busca a lista no backend a cada clique)
- * e mostra o nome do diagrama atual.
+ * dropdown "Abrir" sob demanda (busca a lista no backend a cada clique),
+ * o dropdown "Novo a partir de um modelo" (fluxograma/organograma/mapa
+ * mental prontos, ver io/diagramTemplates.js) e mostra o nome do
+ * diagrama atual.
  */
 export class FileMenu {
-    constructor({ saveLoad, eventBus }) {
+    constructor({ saveLoad, eventBus, scene, renderer, historyManager }) {
         this.saveLoad = saveLoad;
+        this.scene = scene;
+        this.renderer = renderer;
+        this.historyManager = historyManager;
         this.nameEl = document.querySelector("[data-diagram-name]");
         this.openDropdown = document.querySelector('[data-dropdown="open-diagram"]');
         this.openMenu = document.querySelector("[data-open-diagram-menu]");
+        this.templateDropdown = document.querySelector('[data-dropdown="new-from-template"]');
+        this.templateMenu = document.querySelector("[data-template-menu]");
 
         document.querySelector('[data-action="new"]').addEventListener("click", () => this._new());
         document.querySelector('[data-action="save"]').addEventListener("click", () => this._save());
         document.querySelector('[data-action="open"]').addEventListener("click", (event) => this._toggleOpenMenu(event));
+        document
+            .querySelector('[data-action="toggle-template-menu"]')
+            .addEventListener("click", (event) => this._toggleTemplateMenu(event));
 
         eventBus.on("diagram:change", ({ name }) => this._setName(name));
         this._setName(saveLoad.diagramName);
@@ -47,6 +59,34 @@ export class FileMenu {
             this._flash("Erro ao salvar");
             console.error(error);
         }
+    }
+
+    _toggleTemplateMenu(event) {
+        event.stopPropagation();
+        const willOpen = !this.templateDropdown.classList.contains("dropdown--open");
+        this.templateDropdown.classList.toggle("dropdown--open", willOpen);
+        if (!willOpen) return;
+
+        this.templateMenu.innerHTML = "";
+        DIAGRAM_TEMPLATES.forEach((template) => {
+            const item = document.createElement("button");
+            item.className = "dropdown__item";
+            item.textContent = template.label;
+            item.addEventListener("click", () => this._newFromTemplate(template));
+            this.templateMenu.appendChild(item);
+        });
+    }
+
+    _newFromTemplate(template) {
+        this.templateDropdown.classList.remove("dropdown--open");
+        if (this._hasContent()) {
+            const confirmed = window.confirm("Descartar o diagrama atual e começar a partir deste modelo?");
+            if (!confirmed) return;
+        }
+        this.saveLoad.newDiagram();
+        template.build().forEach((element) => this.scene.addObject(element));
+        this.renderer.markDirty();
+        this.historyManager?.pushSnapshot();
     }
 
     async _toggleOpenMenu(event) {
