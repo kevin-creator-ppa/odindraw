@@ -45,6 +45,16 @@ export class ContextMenu {
         this.menu.style.left = `${event.clientX}px`;
         this.menu.style.top = `${event.clientY}px`;
         this.menu.hidden = false;
+        this._clampToViewport(event.clientX, event.clientY);
+    }
+
+    /** Reposiciona o menu se ele estourar a borda direita/inferior da tela — nunca deve ficar inacessível fora da viewport. */
+    _clampToViewport(clickX, clickY) {
+        const rect = this.menu.getBoundingClientRect();
+        const overflowX = rect.right - window.innerWidth;
+        const overflowY = rect.bottom - window.innerHeight;
+        if (overflowX > 0) this.menu.style.left = `${Math.max(4, clickX - overflowX - 4)}px`;
+        if (overflowY > 0) this.menu.style.top = `${Math.max(4, clickY - overflowY - 4)}px`;
     }
 
     _objectItems(hit) {
