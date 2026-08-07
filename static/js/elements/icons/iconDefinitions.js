@@ -252,6 +252,65 @@ export const ICONS = {
         { type: "path", d: "M 10 55 L 90 55 M 78 47 L 90 55 L 78 63" },
     ],
 
+    // "AWS"/"Azure" (genérico) — pictogramas originais só nomeados pelo tipo de
+    // serviço (computação/armazenamento/banco/função/fila/balanceador), sem
+    // reproduzir os ícones oficiais de nenhum provedor — mesmo princípio dos
+    // roteadores "de fabricante" acima.
+    "aws-ec2": [
+        { type: "rect", x: 20, y: 25, w: 60, h: 50 },
+        { type: "line", x1: 8, y1: 35, x2: 20, y2: 35 },
+        { type: "line", x1: 8, y1: 50, x2: 20, y2: 50 },
+        { type: "line", x1: 8, y1: 65, x2: 20, y2: 65 },
+        { type: "line", x1: 80, y1: 35, x2: 92, y2: 35 },
+        { type: "line", x1: 80, y1: 50, x2: 92, y2: 50 },
+        { type: "line", x1: 80, y1: 65, x2: 92, y2: 65 },
+    ],
+    "aws-s3": [
+        { type: "path", d: "M 25 25 L 75 25 L 68 88 L 32 88 Z" },
+        { type: "path", d: "M 35 25 Q 50 6 65 25" },
+    ],
+    "aws-rds": DATABASE_CYLINDER,
+    "aws-lambda": [{ type: "path", d: "M 30 12 L 50 50 L 30 88 M 45 40 L 72 88" }],
+    "aws-sqs": [
+        { type: "rect", x: 12, y: 25, w: 76, h: 50 },
+        { type: "path", d: "M 12 25 L 50 55 L 88 25" },
+    ],
+    "aws-elb": [
+        { type: "polygon", points: [[20, 18], [80, 18], [50, 58]] },
+        { type: "line", x1: 50, y1: 58, x2: 50, y2: 82 },
+        { type: "line", x1: 28, y1: 82, x2: 72, y2: 82 },
+    ],
+    "azure-vm": [
+        { type: "rect", x: 14, y: 18, w: 72, h: 46 },
+        { type: "line", x1: 40, y1: 64, x2: 40, y2: 80 },
+        { type: "line", x1: 60, y1: 64, x2: 60, y2: 80 },
+        { type: "line", x1: 28, y1: 80, x2: 72, y2: 80 },
+    ],
+    "azure-blob": [
+        {
+            type: "path",
+            d: "M 50 8 C 32 38 20 58 20 72 C 20 87 34 93 50 93 C 66 93 80 87 80 72 C 80 58 68 38 50 8 Z",
+        },
+    ],
+    "azure-sql": [
+        { type: "rect", x: 14, y: 18, w: 72, h: 64 },
+        { type: "line", x1: 14, y1: 40, x2: 86, y2: 40 },
+        { type: "line", x1: 14, y1: 62, x2: 86, y2: 62 },
+        { type: "line", x1: 50, y1: 18, x2: 50, y2: 82 },
+    ],
+    "azure-functions": [{ type: "path", d: "M 60 8 L 35 50 L 52 50 L 45 92 L 75 45 L 58 45 Z", fill: true }],
+    "azure-servicebus": [
+        { type: "rect", x: 10, y: 40, w: 62, h: 20 },
+        { type: "path", d: "M 68 30 L 90 50 L 68 70" },
+    ],
+    "azure-lb": [
+        { type: "circle", cx: 50, cy: 18, r: 10 },
+        { type: "line", x1: 50, y1: 28, x2: 50, y2: 50 },
+        { type: "line", x1: 25, y1: 50, x2: 75, y2: 50 },
+        { type: "line", x1: 25, y1: 50, x2: 25, y2: 85 },
+        { type: "line", x1: 75, y1: 50, x2: 75, y2: 85 },
+    ],
+
     // BPMN
     "bpmn-start": [{ type: "circle", cx: 50, cy: 50, r: 35 }],
     "bpmn-end": [

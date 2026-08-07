@@ -84,6 +84,30 @@
       ]
     },
     {
+      "id": "aws",
+      "name": "AWS (genérico)",
+      "items": [
+        { "id": "aws-ec2", "name": "EC2 / Instância" },
+        { "id": "aws-s3", "name": "S3 / Armazenamento" },
+        { "id": "aws-rds", "name": "RDS / Banco de dados" },
+        { "id": "aws-lambda", "name": "Lambda / Função" },
+        { "id": "aws-sqs", "name": "SQS / Fila" },
+        { "id": "aws-elb", "name": "ELB / Load Balancer" }
+      ]
+    },
+    {
+      "id": "azure",
+      "name": "Azure (genérico)",
+      "items": [
+        { "id": "azure-vm", "name": "Máquina virtual" },
+        { "id": "azure-blob", "name": "Blob Storage" },
+        { "id": "azure-sql", "name": "SQL Database" },
+        { "id": "azure-functions", "name": "Functions" },
+        { "id": "azure-servicebus", "name": "Service Bus / Fila" },
+        { "id": "azure-lb", "name": "Load Balancer" }
+      ]
+    },
+    {
       "id": "bpmn",
       "name": "BPMN",
       "items": [
